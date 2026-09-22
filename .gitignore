@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large model checkpoints (hosted on Kaggle: ser8147/arc-laya-fine-tune)
+models/**/*.safetensors
+models/**/*.bin
+models/**/*.pt
+models/**/*.pth
+*.safetensors
+
+# Large binary archives and wheels
+*.zip
+*.tar.gz
+*.whl
+*.parquet
+data/**/*.zip
+data/**/*.whl
+data/arc-agi-3/arc_agi_3_wheels/
+
+# Cloned upstream framework and embedded git repos
+data/arc-agi-3-agents/
+data/arc-agi-3-kaggle-starter/
+data/arc-agi-3/ARC-AGI-3-Agents/
+data/arc-agi-original/
+
+# Lock files
+.~lock.*
+*.lock
+
+# Execution logs
+*.log
+logs/
+
+# Environments & Scratch
+.venv/
+env/
+venv/
+scratch/
+.tmp/
+/tmp/
+
+# OS / Editor artifacts
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,29 @@
+{
+  "total_cases_evaluated": 200,
+  "total_decisions": 493,
+  "overall_choice_accuracy": 0.802,
+  "overall_noul_accuracy": 1.0,
+  "composite_accuracy": 0.8824,
+  "mean_brier_score": 0.0818,
+  "latency_stats_ms": {
+    "p50": 1581.47,
+    "p90": 2416.99,
+    "p95": 2603.44,
+    "p99": 2817.07,
+    "mean": 1747.78
+  },
+  "per_workflow_breakdown": {
+    "arc3_agent_gating": {
+      "accuracy": 0.8364,
+      "n_decisions": 214,
+      "avg_latency_ms": 1663.12
+    },
+    "arc2_heuristic_screening": {
+      "accuracy": 0.9176,
+      "n_decisions": 279,
+      "avg_latency_ms": 1845.18
+    }
+  },
+  "throughput_queries_per_sec": 0.57,
+  "total_eval_time_seconds": 349.57
+}

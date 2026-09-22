@@ -1,0 +1,17 @@
+{
+  "id": "ser8147/arc-laya-dual-process-submission",
+  "title": "arc-laya-dual-process-submission",
+  "code_file": "kaggle_arc2_submission.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "ser8147/arc-laya-finetune-data"
+  ],
+  "competition_sources": [
+    "arc-prize-2026-arc-agi-2"
+  ],
+  "kernel_sources": []
+}

@@ -1,0 +1,18 @@
+{
+  "id": "ser8147/arc-laya-finetune",
+  "title": "arc-laya-finetune",
+  "code_file": "kaggle_laya_arc_train.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": [
+    "ser8147/arc-laya-finetune-data"
+  ],
+  "competition_sources": [
+    "arc-prize-2026-arc-agi-2",
+    "arc-prize-2026-arc-agi-3"
+  ],
+  "kernel_sources": []
+}
