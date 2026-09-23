@@ -4,8 +4,8 @@
 **Affiliation:** Independent Researcher  
 **Kaggle:** [@ser8147](https://www.kaggle.com/ser8147)  
 **Competition Track:** ARC Prize 2026 — Paper Track  
-**Code Repository:** [GitHub / Open Source (MIT License)](https://github.com/arcprize)  
-**Kaggle Benchmark / Code Submission Ref:** [ser8147/arc-laya-dual-process-submission](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission)  
+**Code Repository:** [github.com/sdsoporte/arc-prize-2026-dual-process](https://github.com/sdsoporte/arc-prize-2026-dual-process)  
+**Kaggle Benchmark / Code Submission Ref:** [ser8147/arc-agi-3-dual-process-agent](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent) (Score: **0.28**)  
 
 ---
 

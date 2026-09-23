@@ -2,7 +2,12 @@
 
 **Author:** Sergio Alberto Dominguez ([@ser8147](https://www.kaggle.com/ser8147))  
 **Affiliation:** Independent Researcher  
-**Kaggle Code Submission Reference:** [ser8147/arc-laya-dual-process-submission](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission)  
+**GitHub Repository:** [github.com/sdsoporte/arc-prize-2026-dual-process](https://github.com/sdsoporte/arc-prize-2026-dual-process)  
+**Kaggle Code Submission References:**  
+* ARC-AGI-3 Dynamic Agent (v2): [ser8147/arc-agi-3-dual-process-agent](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent) (Score: **0.28**)  
+* ARC-AGI-2 Solver Submission (v2): [ser8147/arc-laya-dual-process-submission](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission)  
+* Distributed Training Kernel: [ser8147/arc-laya-fine-tune](https://www.kaggle.com/code/ser8147/arc-laya-fine-tune)  
+* Training & Holdout Dataset: [ser8147/arc-laya-finetune-data](https://www.kaggle.com/datasets/ser8147/arc-laya-finetune-data)  
 **License:** Permissive Public Domain (MIT / CC0)  
 
 ---
@@ -16,6 +21,7 @@ Evaluating over an unseen holdout benchmark of 200 tasks (493 decision points), 
 * **91.76% Transformation Classification Accuracy** on ARC-AGI-2 tasks, pruning candidate DSL operators by ~75%.
 * **100.00% Accuracy on Impasse & Deadlock Detection** in dynamic ARC-AGI-3 game environments.
 * **0.0818 Brier Score Calibration**, ensuring that deliberative System 2 reasoning is triggered strictly when algorithmic uncertainty warrants it.
+* **0.28 Public Leaderboard Score on ARC-AGI-3**, confirming practical efficacy in real dynamic game environments with in-episode spatial memory.
 * **0 Token Generation Overhead**, operating 100% offline within competition constraints.
 
 ---
@@ -32,7 +38,7 @@ Monolithic architectures encounter severe trade-offs on ARC:
 In human cognition (Kahneman, 2011), intuitive perceptual screening (System 1) processes 90%+ of sensory transitions without analytical strain, waking up deliberate analytical problem-solving (System 2) only upon encountering anomalies or dead ends. We translate this into an engineering architecture:
 
 1. **System 1 (Laya Decision Engine):** A non-autoregressive 421M encoder evaluating multi-class actions and deadlock probabilities in a single sub-second forward pass.
-2. **System 2 (Deliberative Solver):** A bounded program synthesizer operating over an algebraically pruned DSL space.
+2. **System 2 (Deliberative Solver):** A bounded program synthesizer operating over an algebraically pruned DSL space with in-episode spatial memory.
 
 ---
 
@@ -96,14 +102,30 @@ def choose_action(state, tau=0.40):
 | **Pure System 1 (Heuristic Only)** | $B = 1$ | **42 seconds** | Fails on deep compositional rules |
 | **Dual-Process (Ours)** | **$B' \approx 8$** | **28 minutes** | **0 Timeouts, optimal trade-off** |
 
+### 5.3 Live Competition Leaderboard Verification
+
+Beyond offline holdout benchmarks, our dual-process architecture was submitted and evaluated on live, unseen competition environments in both code competition tracks:
+
+| Competition Track | Evaluated Kernel | Public Score | Key Architectural Mechanism |
+|---|---|---:|---|
+| **ARC-AGI-3 (Dynamic Game Track)** | [`ser8147/arc-agi-3-dual-process-agent`](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent) | **0.28 (28% Solved)** 🎯 | In-episode spatial memory, CRC32 topological hashing, fatal trap pruning post-`GAME_OVER`, and frontier count-based exploration (+16.7% relative improvement over v1 baseline). |
+| **ARC-AGI-2 (Static Grid Track)** | [`ser8147/arc-laya-dual-process-submission`](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission) | **0.00** | Bounded System 2 program synthesis over D4 isometries, color mapping, topological hole filling, and 2-stage compositions (synthesizing rules for 17.9% of benchmark tasks). |
+
 ---
 
 ## 6. Offline Compliance & Reproducibility
 
-Competition rules strictly forbid internet access during scoring. Our model executes entirely within standalone PyTorch safetensors on CPU or GPU without calling external APIs (OpenAI/Anthropic). All code, training scripts, and model weights are open-sourced under permissive licensing.
+Competition rules strictly forbid internet access during scoring. Our model executes entirely within standalone PyTorch safetensors on CPU or GPU without calling external APIs (OpenAI/Anthropic). 
+
+All code, evaluation scripts, and model pipelines are open-sourced under permissive licensing:
+* **GitHub Repository:** [https://github.com/sdsoporte/arc-prize-2026-dual-process](https://github.com/sdsoporte/arc-prize-2026-dual-process)
+* **Kaggle Fine-Tune Dataset:** [https://www.kaggle.com/datasets/ser8147/arc-laya-finetune-data](https://www.kaggle.com/datasets/ser8147/arc-laya-finetune-data)
+* **ARC-AGI-3 Submission Kernel:** [https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent)
+* **ARC-AGI-2 Submission Kernel:** [https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission)
+* **Distributed Training Kernel:** [https://www.kaggle.com/code/ser8147/arc-laya-fine-tune](https://www.kaggle.com/code/ser8147/arc-laya-fine-tune)
 
 ---
 
 ## 7. Conclusion
 
-Achieving human-level performance ($85\%$) on ARC requires architectural modularity: pairing high-speed intuition with formal symbolic verification. By demonstrating that non-autoregressive decision models can achieve **88.24% gating accuracy** and **100% deadlock detection** with zero token cost, we provide a reproducible foundation for next-generation ARC architectures.
+Achieving human-level performance ($85\%$) on ARC requires architectural modularity: pairing high-speed intuition with formal symbolic verification. By demonstrating that non-autoregressive decision models can achieve **88.24% gating accuracy** and **100% deadlock detection** with zero token cost, and scaling to **0.28 on live ARC-AGI-3 games**, we provide a reproducible foundation for next-generation ARC architectures.
