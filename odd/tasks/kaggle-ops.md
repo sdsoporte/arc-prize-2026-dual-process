@@ -1,7 +1,7 @@
 # ODD Feature — `kaggle-ops`
 
-> **Status:** in progress
-> **Branch:** `feat/kaggle-ops-runbook`
+> **Status:** complete — all five tasks done, independent verification remediated
+> **Branch:** `feat/kaggle-ops-runbook` (not yet merged; awaiting the owner's review)
 > **Base commit:** `fa49131` (feat(arc3): implement version 3 agent with system 2 bfs frontier planning and deadlock recovery)
 > **Created:** 2026-09-23
 > **Engram mirror topic key:** `arc-paper-track/odd/kaggle-ops/tasks`
@@ -74,9 +74,11 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
 | T2 | Build `scripts/kaggle/` verified helpers (state dump + writeup access) | done | all subcommands exit 0; see evidence log |
 | T3 | Write `docs/KAGGLE_OPS.md` master runbook | done | commit `4843840`; parent review, rule-section fix `d80c6c6` |
 | T4 | Write `docs/ENVIRONMENT.md` (local bootstrap + Kaggle GPU strategy) | done | commit `c3a53aa` |
-| T5 | Independent verification pass and close | in progress | `gentle-ai-verify` delegated; report pending |
+| T5 | Independent verification pass and close | done | `gentle-ai-verify` report; 10 defects found, all remediated in `366533a` |
 
 ## 7. Acceptance criteria
+
+All five met, as evidenced by the T5 verification pass:
 
 1. Every command documented in `docs/KAGGLE_OPS.md` has been executed and its observed output shape
    recorded. No command is documented from memory or inference.
@@ -84,7 +86,8 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
 3. The writeup read path is scripted so the Paper Track submission can be inspected without
    re-deriving the API.
 4. Deadlines, submission limits and quota are stated with their source and are checkable.
-5. Limitations are explicit: what was NOT verifiable (e.g. logged-in writeup visibility) is marked as such.
+5. Limitations are explicit: what was NOT verifiable (logged-in writeup visibility, `shellcheck` lint,
+   mutating command behaviour) is marked as such.
 
 ## 8. Evidence log
 
@@ -119,6 +122,21 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
   page is recorded as **unresolved** in the runbook rather than asserted. The decisive practical point,
   which does not depend on resolving it, is that Competition-Specific `2.2.a` permits only one submission,
   so editing writeup `86160` is the only mechanism for improvement; the question cannot gate the decision.
+- 2026-09-23 — **T5 independent verification completed** (`gentle-ai-verify`). Confirmed: the safety claim
+  holds with **zero baseline divergence** (ARC-AGI-2/3 lifetime submission counts and timestamps, kernel
+  `lastRunTime`, model version count, dataset/kernel/model counts, writeup count all reproduced exactly, and
+  every artifact timestamp predates the documentation commits); the documented read-only commands execute;
+  the factual claims, the API host/prefix table and the compliance verdicts are correct; the README diff is
+  exactly one added line; no credential is printed by any code path; no scratch files leak.
+- 2026-09-23 — **Ten defects found by that pass, all remediated in `366533a`.** Two were outright false
+  claims introduced by the writer: that anonymous GETs work for all six listed API routes (3 of 6 return
+  401), and that the anonymous writeup listing returns 0 rows (it returns 401). One was a dangerous
+  misclassification: `kaggle datasets metadata` is **not** read-only — with no `-p` it downloads
+  `dataset-metadata.json` into the working directory, and the verifier's own probe left such a file in the
+  repository root (removed during remediation; it is not gitignored). The remainder were a wrong quoted log
+  line, a dangling reference, three count inaccuracies, and rule-citation imprecision.
+- 2026-09-23 — `shellcheck` is **not installed** on this machine, so script lint is explicitly unverified.
+  That is the only item from the verification brief that produced no verdict.
 
 ## 9. Known risks carried (not fixed by this feature)
 
