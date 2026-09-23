@@ -72,9 +72,9 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
 |---|---|---|---|
 | T1 | Scaffold ODD tracking: branch, feature doc, Engram mirror, visible todo | done | branch `feat/kaggle-ops-runbook`; this file |
 | T2 | Build `scripts/kaggle/` verified helpers (state dump + writeup access) | done | all subcommands exit 0; see evidence log |
-| T3 | Write `docs/KAGGLE_OPS.md` master runbook | pending | review + every command re-executed |
-| T4 | Write `docs/ENVIRONMENT.md` (local bootstrap + Kaggle GPU strategy) | pending | local probe output |
-| T5 | Independent verification pass and close | pending | `gentle-ai-verify` report |
+| T3 | Write `docs/KAGGLE_OPS.md` master runbook | done | commit `4843840`; parent review, rule-section fix `d80c6c6` |
+| T4 | Write `docs/ENVIRONMENT.md` (local bootstrap + Kaggle GPU strategy) | done | commit `c3a53aa` |
+| T5 | Independent verification pass and close | in progress | `gentle-ai-verify` delegated; report pending |
 
 ## 7. Acceptance criteria
 
@@ -103,6 +103,22 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
   which lists only the latest version. The correct command is
   `kaggle models variations versions list <owner>/<model>/<framework>/<instance>`. This trap is now
   encoded in `kstate.sh` so it cannot recur.
+- 2026-09-23 — T3/T4 written by a delegated worker, then reviewed and hard-verified by the parent. The
+  worker reported three disagreements with the parent's fact table; all three were re-tested by hand. The
+  worker was right twice and the parent was wrong twice:
+  * **API host claim — parent wrong.** `https://api.kaggle.com/v1/competitions/list?search=...` returns 200
+    with a body byte-identical to `https://www.kaggle.com/api/v1/...` (2775 bytes each). What differs is the
+    **prefix**, not the host: `api.kaggle.com/api/v1/...` and `www.kaggle.com/v1/...` both return 404. The
+    original claim came from probing an invented gRPC-style path and generalising from its 404.
+  * **Rule section labels — parent wrong.** The code-repository requirement is Competition-Specific `2.5.b`
+    (WINNER LICENSE), not `2.8.b`. Fixed in `kwriteup.sh` and in the output it quotes (commit `d80c6c6`).
+  * **Severity of the repository link — parent overstated.** It is a winner obligation, not a submission
+    requirement: the Submission Requirements page marks the Project Link "(Optional)". Optional to submit,
+    required to win.
+- 2026-09-23 — the tie-break conflict between General `3.7.b` (no hackathon tiebreakers) and the Evaluation
+  page is recorded as **unresolved** in the runbook rather than asserted. The decisive practical point,
+  which does not depend on resolving it, is that Competition-Specific `2.2.a` permits only one submission,
+  so editing writeup `86160` is the only mechanism for improvement; the question cannot gate the decision.
 
 ## 9. Known risks carried (not fixed by this feature)
 
@@ -110,5 +126,5 @@ No edits to `src/**`, `notebooks/**`, `models/**`, `data/**`, `paper/**`, `submi
 |---|---|---|
 | ~~Paper cites Laya **v1**, which no longer exists in Kaggle Models (only v2)~~ | **RETRACTED** — v1 and v2 are both published and public. The real hazard is that `models instances list` shows only the latest version | platform trap, now encoded in `kstate.sh` |
 | No submission kernel runs the Laya System 1 (both are model-free heuristic/DSL) | Completeness / Theory rubric | solver integration |
-| Live writeup is stale vs `submissions/KAGGLE_WRITEUP.md`; lacks the required GitHub repo link (Rule 2.8.b) | Eligibility + Accuracy rubric | writeup refresh |
+| Live writeup is stale vs `submissions/KAGGLE_WRITEUP.md`; lacks the GitHub repo link | Winner-obligation gap (Competition-Specific `2.5.b`), **not** an eligibility blocker — the Submission Requirements page marks the Project Link optional | writeup refresh |
 | Pre-existing uncommitted work in `src/arc3_spatial_memory_agent.py`, the ARC-3 kernel notebook, `.gitignore` and untracked `environment_files/` | Not part of this feature | ARC-3 v3 deploy |
