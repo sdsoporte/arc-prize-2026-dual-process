@@ -1,0 +1,13 @@
+{
+  "ownerSlug": "ser8147",
+  "modelSlug": "arc-laya",
+  "instanceSlug": "typed-decisions",
+  "framework": "transformers",
+  "overview": "Version 2: Fine-tuned 421M non-autoregressive decision model for ARC-AGI-2 and ARC-AGI-3 trained on 1720 cases.",
+  "usage": "# Model Usage\n\n```python\nimport laya\n\nagent = laya.Agent('/kaggle/input/arc-laya/transformers/typed-decisions/2', device='cuda')\nprediction = agent.predict(state_representation, questions)\n```\n\n### Version 2 Performance\n* Holdout Validation Accuracy: 89.92% (258 cases, 1290 decisions)\n* Brier Calibration Score: 0.1020\n* In-Distribution Latency (p50): 68.2ms\n* Token Overhead: 0 tokens (non-autoregressive classification)\n* System 1 Gating: Real ARC-AGI-2 taxonomy screening & ARC-AGI-3 deadlock / trap avoidance\n",
+  "licenseName": "Apache 2.0",
+  "fineTunable": true,
+  "trainingData": [
+    "ser8147/arc-laya-finetune-data"
+  ]
+}
