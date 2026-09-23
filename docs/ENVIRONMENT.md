@@ -207,9 +207,9 @@ identically.
   time; it is strong evidence of the saving environment, not proof of the minimum loadable version.
 - The notebook pins `transformers>=4.48.0` and `laya>=0.1.6`. Those are floors, not a tested lock.
 - There is **no `requirements.txt`, `pyproject.toml`, lockfile, or `environment.yml`** at the repository
-  root. The only dependency manifest in the tree is
-  `data/arc-agi-3-agents/pyproject.toml`, which describes the vendored ARC-AGI-3 *agents* framework, not
-  the Laya model stack.
+  root. The only dependency manifests in the tree are two byte-identical copies of the vendored ARC-AGI-3
+  *agents* framework, `data/arc-agi-3-agents/pyproject.toml` and
+  `data/arc-agi-3/ARC-AGI-3-Agents/pyproject.toml`; neither describes the Laya model stack.
 - **I could not determine the exact `torch` build** (version and CUDA variant) that produced
   `model.safetensors`. Nothing in the repo pins it.
 

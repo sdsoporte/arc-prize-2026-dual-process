@@ -153,7 +153,7 @@ print("  [%s] cover image             %s" % (check(bool(w.get("coverImageUrl")))
 lic = (w.get("license") or {}).get("name")
 print("  [%s] kaggle license field    %s" % (check(lic == "Attribution 4.0 International (CC BY 4.0)"), lic))
 body_cc = bool(re.search(r"CC-?BY", md, re.I))
-print("  [%s] body license text       states CC-BY: %s   (Competition-Specific 2.5.a requires CC-BY-4.0)" % (check(body_cc), body_cc))
+print("  [%s] body license text       states CC-BY: %s   (self-check; Competition-Specific 2.5.a.1 gives the licence)" % (check(body_cc), body_cc))
 
 nbs = [l for l in links if l.get("entityType") == "kernels"]
 pub = [l for l in nbs if (l.get("resource") or {}).get("isPrivateNullable") is False]

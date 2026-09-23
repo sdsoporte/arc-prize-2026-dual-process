@@ -148,9 +148,19 @@ edited) through `kaggle`.
 KAGGLE_API_BASE=https://www.kaggle.com/api/v1
 ```
 
-Authenticated and anonymous GETs against this base work for the routes this repository uses
-(`/competitions/list`, `/competitions/<name>/pages`, `/competitions/<name>/hackathon-write-ups`,
-`/kernels/list`, `/datasets/list`, `/models/<owner>/<model>/get`).
+Not every route on this base is readable anonymously. Measured 2026-09-23 with no `Authorization` header:
+
+| Route | Anonymous result |
+|---|---|
+| `/competitions/list` | **401** `{"code":401,"message":"Unauthenticated"}` |
+| `/competitions/<name>/pages` | 200 |
+| `/competitions/<name>/hackathon-write-ups` | **401** |
+| `/kernels/list` | **401** |
+| `/datasets/list` | 200 |
+| `/models/<owner>/<model>/get` | 200 |
+
+Send the bearer token for everything (`lib.sh`'s `api_get`). `api_get_anon` exists to answer exactly one
+question -- "can the public read this?" -- and must never be used as a general-purpose call.
 
 > **Disagreement with the reconnaissance note — read this.** An earlier note claimed
 > `https://api.kaggle.com/v1/...` returns 404 for these routes while
@@ -303,7 +313,7 @@ model.safetensors                            934  4:41 pm, Wednesday 23 Septembe
 $ kaggle kernels logs ser8147/arc-laya-finetune | head -3
 [{"stream_name":"stderr","time":6.409935486,"data":"0.00s - Debugger warning: ...\n"}
 ,{"stream_name":"stderr","time":6.409970637,"data":"0.00s - make the debugger miss breakpoints...\n"}
-,{"stream_name":"stdout","time":8.053736765,"data":"Wed Sep 23 16:41:57 2026       \r\n"}
+,{"stream_name":"stderr","time":6.409976688,"data":"0.00s - to python to disable frozen modules.\n"}
 ```
 
 `kernels logs` emits newline-delimited JSON objects, each with `stream_name`, `time`, and `data`. The
@@ -311,13 +321,14 @@ $ kaggle kernels logs ser8147/arc-laya-finetune | head -3
 running kernel; no kernel was running).
 
 `kernels output` downloads a kernel's output files onto disk and `kernels pull` writes the notebook and
-metadata into the working tree. Both were **not executed in this repository** to keep the tree clean;
-`--help` shapes are captured below.
+metadata into the working tree. Both were **not executed in this repository** to keep the tree clean; run
+`kaggle kernels output --help` and `kaggle kernels pull --help` for their flags.
 
 ### Metadata fields
 
-A kernel is described by `kernel-metadata.json`. This repository has three, and they show the fields the
-CLI actually uses:
+A kernel is described by `kernel-metadata.json`. The working tree holds four -- three tracked under
+`notebooks/` and one gitignored under `data/arc-agi-3-kaggle-starter/` -- and they show the fields the CLI
+actually uses:
 
 ```json
 {
@@ -395,7 +406,12 @@ Each call consumes a submission slot against `maxDailySubmissions`. On ARC-AGI-2
 
 ## 4. Datasets
 
-Command group: `kaggle datasets` (alias `kaggle d`). Read-only: `list`, `files`, `status`, `metadata`.
+Command group: `kaggle datasets` (alias `kaggle d`). Read-only: `list`, `files`, `status`.
+
+> **Careful with `metadata`.** It is not read-only in the sense that matters: with no `-p`, it downloads
+> `dataset-metadata.json` **into the current working directory**. A verification pass on 2026-09-23 ran it
+> from the repository root and left an untracked file behind. Always pass `-p <dir>` outside the repo.
+
 Mutating: `create`, `version`, `delete`.
 
 ```
@@ -669,7 +685,7 @@ Participant writeups are **not anonymously readable** during the competition. Ob
 |---|---|
 | Anonymous GET of the participant writeup URL | HTTP **404** |
 | Anonymous GET of the host template URL | HTTP **200** |
-| Anonymous API listing (`hackathon-write-ups`) | `totalCount` absent, **0** rows |
+| Anonymous API listing (`hackathon-write-ups`) | HTTP **401** `{"code":401,"message":"Unauthenticated"}` |
 | Authenticated API listing | `totalCount: 2`, 2 rows |
 | Anonymous API GET of writeup `86160` | HTTP **401** |
 | Authenticated API GET of writeup `86160` | HTTP **200** |
@@ -732,7 +748,7 @@ $ scripts/kaggle/kwriteup.sh check
   [PASS] track selected          [346]   (required in order to submit)
   [PASS] cover image             /writeups/114706/images/cover
   [PASS] kaggle license field    Attribution 4.0 International (CC BY 4.0)
-  [FAIL] body license text       states CC-BY: False   (Competition-Specific 2.5.a requires CC-BY-4.0)
+  [FAIL] body license text       states CC-BY: False   (self-check; Competition-Specific 2.5.a.1 gives the licence)
   [PASS] public notebooks        2 of 2 attached are public
   [FAIL] repository project link MISSING - Competition-Specific 2.5.b (winner obligation: repo link + reproduction steps)
   [FAIL] repository in body      False
@@ -810,7 +826,7 @@ was verified.
 | Paper Track max team size | 8 | `maxTeamSize` |
 | GPU quota | 30 h/week; 1.37 h used; 28.63 h remaining; refreshes `2026-09-26T00:00:00` | `kaggle quota` |
 | TPU quota | 20 h/week; 0 used; refreshes `2026-09-26T00:00:00` | `kaggle quota` |
-| ARC-AGI-2 entries (teams) | 2165 | `kagglesdk` `ApiGetCompetition.teamCount` |
+| ARC-AGI-2 entries (teams) | 2166 (was 2165 earlier the same day; it grows) | `kagglesdk` `ApiGetCompetition.teamCount` |
 | ARC-AGI-3 entries (teams) | 3274 | `teamCount` |
 | Paper Track entries (teams) | 202 | `teamCount`; `README.md` says "~199 (as of Sep 22, 2026)" — expected, it grew |
 
@@ -884,12 +900,18 @@ Each entry is **symptom → cause → correct command**.
 ### 9.8 Tie-break behaviour for edit-early vs edit-late
 
 - **Symptom:** fear that editing a writeup after the first submission forfeits a tie-break.
-- **Cause:** the two rule sources appear to disagree, and nobody has reconciled them:
-  - **General `3.7.b`** (rendered `###3. GENERAL COMPETITION RULES` → `####7. DETERMINING WINNERS` → `b`):
-    *"For Hackathon Competitions, each of the top Submissions will get a unique ranking and there will be
-    no tiebreakers."*
-  - **The Paper Track Evaluation page** says: *"In the event of a tie, the Paper that was entered first to
-    the Competition will be the winner."*
+- **Cause:** one paragraph says two things, and the Evaluation page repeats only the first of them:
+  - **General `3.7.b`** (rendered `###3. GENERAL COMPETITION RULES` → `####7. DETERMINING WINNERS` → `b`)
+    contains *both* sentences -- general rule first, hackathon carve-out second:
+    *"In the event of a tie, the Submission that was entered first to the Competition will be the winner. …
+    **For Hackathon Competitions, each of the top Submissions will get a unique ranking and there will be
+    no tiebreakers.**"*
+  - **The Paper Track Evaluation page** repeats only the first sentence: *"In the event of a tie, the Paper
+    that was entered first to the Competition will be the winner."*
+
+  The tension is therefore **intra-paragraph, not cross-source**. That the carve-out comes later and is more
+  specific is why the working assumption below is "no tiebreakers for hackathons" -- but that remains an
+  interpretation of a single paragraph, not a settled reading.
 - **Working assumption (the repository's, from the reconnaissance note):** for a hackathon there are no
   tiebreakers, so an early writeup submission confers no tie-break advantage and editing it carries no
   tie-break risk.

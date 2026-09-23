@@ -71,10 +71,12 @@ kaggle models variations versions list "$KAGGLE_USER/arc-laya/Transformers/typed
 
 # --- 7-8. Competition submissions -------------------------------------------
 
+section "7. Competition submissions"
 for label in "ARC-AGI-2:$ARC2_COMP" "ARC-AGI-3:$ARC3_COMP"; do
-  section "7. ${label%%:*} submissions"
+  printf '   %s (%s):\n' "${label%%:*}" "${label##*:}"
   kaggle competitions submissions -c "${label##*:}" 2>&1 | sed 's/^/   /' || true
 done
+section "8. Submissions remaining today"
 for label in "ARC-AGI-2:$ARC2_COMP" "ARC-AGI-3:$ARC3_COMP"; do
   printf '   %s remaining today: ' "${label%%:*}"
   kaggle competitions submission-limits -c "${label##*:}" 2>/dev/null \
