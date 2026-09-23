@@ -128,6 +128,7 @@ Nov 09, 2026  ─── Paper Track submission deadline
 - [ARC Tasks Explorer](https://arcprize.org/tasks)
 - [François Chollet — On the Measure of Intelligence (Paper)](https://arxiv.org/abs/1911.01547)
 - [Kaggle LLM Integration Guide](docs/KAGGLE_LLM_INTEGRATION_GUIDE.md) — Comprehensive guide for offline LLM inference on Kaggle
+- [Kaggle Operations Runbook](docs/KAGGLE_OPS.md) and [Local & Kaggle Environment](docs/ENVIRONMENT.md) — Verified Kaggle CLI/API commands, the Paper Track writeup workflow, and local environment bootstrap
 
 ---
 
