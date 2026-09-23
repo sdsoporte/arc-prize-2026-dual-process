@@ -20,7 +20,7 @@ def get_d4_ops() -> list[tuple[str, Callable[[list[list[int]]], list[list[int]]]
         ("identity", lambda g: [r[:] for r in g]),
         ("rot90", lambda g: [list(x) for x in zip(*g[::-1])]),
         ("rot180", lambda g: [r[::-1] for r in g[::-1]]),
-        ("rot270", lambda g: [list(x) for x in zip(*g)[::-1]]),
+        ("rot270", lambda g: [list(x) for x in zip(*g)][::-1]),
         ("flip_h", lambda g: [r[::-1] for r in g]),
         ("flip_v", lambda g: g[::-1]),
         ("transpose", lambda g: [list(x) for x in zip(*g)]),
@@ -514,9 +514,26 @@ def get_panel_divider_ops(train_colors: Set[int]) -> list[tuple[str, Callable[[l
 
 
 # --- Master Task Solver (System 2 Bounded Synthesis) ---
-def solve_arc_task(task: dict) -> list[dict[str, list[list[int]]]]:
+def solve_arc_task(
+    task: dict, trace: dict | None = None
+) -> list[dict[str, list[list[int]]]]:
+    """Synthesise attempts for every test input of one ARC task.
+
+    `trace`, when provided, is cleared and filled with the diagnostics an evaluation harness needs to
+    explain the score rather than just report it:
+
+        n_candidates  number of candidate transformations built for this task
+        n_matching    how many of them reproduced every training pair
+        matching      their names (only the first two are used to build attempts)
+        used_fallback True when no candidate matched, so attempt_1 echoed the input or a constant grid
+        reason        "ok", or "no_train_pairs" when the task carried no demonstrations
+    """
     train_pairs = task.get("train", [])
     test_inputs = task.get("test", [])
+
+    if trace is not None:
+        trace.clear()
+        trace.update(n_candidates=0, n_matching=0, matching=[], used_fallback=True, reason="no_train_pairs")
 
     if not train_pairs:
         return [{"attempt_1": t["input"], "attempt_2": t["input"]} for t in test_inputs]
@@ -617,13 +634,22 @@ def solve_arc_task(task: dict) -> list[dict[str, list[list[int]]]]:
             continue
 
     # Evaluate candidates against 100% of training demonstrations
-    matching_solvers: list[Callable] = []
+    matching_solvers: list[tuple[str, Callable]] = []
     for name, fn in candidates:
         try:
             if all(grids_equal(fn(p["input"]), p["output"]) for p in train_pairs):
-                matching_solvers.append(fn)
+                matching_solvers.append((name, fn))
         except Exception:
             continue
+
+    if trace is not None:
+        trace.update(
+            n_candidates=len(candidates),
+            n_matching=len(matching_solvers),
+            matching=[name for name, _ in matching_solvers],
+            used_fallback=not matching_solvers,
+            reason="ok",
+        )
 
     # Fallback generators for attempt_2 or when no exact solver found
     const_out_h = len(train_pairs[0]["output"])
@@ -649,10 +675,10 @@ def solve_arc_task(task: dict) -> list[dict[str, list[list[int]]]]:
     for t_item in test_inputs:
         inp = t_item["input"]
         if len(matching_solvers) >= 2:
-            attempt_1 = matching_solvers[0](inp)
-            attempt_2 = matching_solvers[1](inp)
+            attempt_1 = matching_solvers[0][1](inp)
+            attempt_2 = matching_solvers[1][1](inp)
         elif len(matching_solvers) == 1:
-            attempt_1 = matching_solvers[0](inp)
+            attempt_1 = matching_solvers[0][1](inp)
             attempt_2 = fallback_2(inp)
         else:
             attempt_1 = fallback_1(inp)
