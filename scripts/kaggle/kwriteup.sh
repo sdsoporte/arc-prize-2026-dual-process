@@ -153,18 +153,19 @@ print("  [%s] cover image             %s" % (check(bool(w.get("coverImageUrl")))
 lic = (w.get("license") or {}).get("name")
 print("  [%s] kaggle license field    %s" % (check(lic == "Attribution 4.0 International (CC BY 4.0)"), lic))
 body_cc = bool(re.search(r"CC-?BY", md, re.I))
-print("  [%s] body license text       states CC-BY: %s   (Rule 2.5.a requires CC-BY-4.0)" % (check(body_cc), body_cc))
+print("  [%s] body license text       states CC-BY: %s   (Competition-Specific 2.5.a requires CC-BY-4.0)" % (check(body_cc), body_cc))
 
 nbs = [l for l in links if l.get("entityType") == "kernels"]
 pub = [l for l in nbs if (l.get("resource") or {}).get("isPrivateNullable") is False]
 print("  [%s] public notebooks        %d of %d attached are public" % (check(bool(pub)), len(pub), len(nbs)))
 
 repo = [l for l in links if "github.com" in (l.get("url") or "")]
-print("  [%s] repository project link %s" % (check(bool(repo)), repo[0].get("url") if repo else "MISSING - Rule 2.8.b requires a code repository link"))
+repo_msg = repo[0].get("url") if repo else "MISSING - Competition-Specific 2.5.b (winner obligation: repo link + reproduction steps)"
+print("  [%s] repository project link %s" % (check(bool(repo)), repo_msg))
 print("  [%s] repository in body      %s" % (check(bool(re.search(r"github\.com", md, re.I))), bool(re.search(r"github\.com", md, re.I))))
 
 print()
-print("  [INFO] Rule 2.2.a: a hackathon team may submit ONE submission only.")
+print("  [INFO] Competition-Specific 2.2.a: a hackathon team may submit ONE submission only.")
 print("         Edit this writeup in place. Never create a second one.")
 
 url = "https://www.kaggle.com" + (w.get("url") or "")
