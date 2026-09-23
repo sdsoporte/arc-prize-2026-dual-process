@@ -1,0 +1,8 @@
+{
+  "ownerSlug": "ser8147",
+  "title": "ARC Laya Decision Engine",
+  "slug": "arc-laya",
+  "subtitle": "Fast non-autoregressive System 1 decision screening for ARC-AGI-2 and ARC-AGI-3",
+  "isPrivate": false,
+  "description": "# ARC Laya Decision Engine\n\nA specialized 421M non-autoregressive decision model fine-tuned on ARC-AGI task traces and sequential game environments.\n\n### Model Characteristics\n* **Parameters:** 421M\n* **Architecture:** Non-autoregressive encoder with multi-head calibrated decision heads\n* **Inference Latency:** < 50ms per state on CPU / GPU\n* **Token Overhead:** 0 tokens (logit/classification output)\n* **Brier Score Calibration:** 0.0818\n\n### Intended Use\nSystem 1 decision gating, deadlock detection, and combinatorial search pruning for ARC-AGI-2, ARC-AGI-3, and local agentic triage."
+}
