@@ -1,10 +1,14 @@
-"""ARC-AGI-3 Dual-Process Agent with In-Episode Spatial Memory.
+"""ARC-AGI-3 Dual-Process Agent (Version 3).
 
-Combines fast System 1 heuristic screening and frontier exploration
-with dynamic deadlock detection and fatal transition avoidance.
+Integrates:
+1. System 1 Safety Gating: Pruning fatal transitions leading to GAME_OVER.
+2. Coordinate Graph & Wall Edge Mapping: Prevents repeated collisions with obstacles.
+3. System 2 BFS Frontier Pathfinding: Shortest path navigation to unexplored boundaries.
+4. Deadlock Recovery & Oscillation Breaking: Action 7 (Undo) and Action 5 (Interact) probing.
 """
 from __future__ import annotations
 
+from collections import deque
 import random
 import time
 import zlib
@@ -29,7 +33,7 @@ def compute_frame_hash(frame_list: list[list[list[int]]]) -> int:
 
 
 class MyAgent(Agent):
-    """Dual-Process Agent combining in-episode spatial memory, frontier exploration, and deadlock avoidance."""
+    """Dual-Process Agent with System 2 BFS Frontier Pathfinding and Deadlock Recovery."""
 
     MAX_ACTIONS = 80
 
@@ -43,6 +47,7 @@ class MyAgent(Agent):
         self.visited_coords: dict[tuple[int, int], int] = {}
         self.fatal_transitions: set[tuple[int, int]] = set()
         self.wall_transitions: set[tuple[int, int]] = set()
+        self.wall_edges: set[tuple[tuple[int, int], tuple[int, int]]] = set()
         self.current_level: int = 0
 
         # Positional tracker
@@ -64,21 +69,75 @@ class MyAgent(Agent):
         """Stop only upon winning."""
         return latest_frame.state is GameState.WIN
 
-    def _get_target_coord(self, action: GameAction) -> tuple[int, int]:
+    def _get_target_coord(self, action: GameAction, from_pos: tuple[int, int] | None = None) -> tuple[int, int]:
+        px, py = from_pos if from_pos is not None else (self.pos_x, self.pos_y)
         if action == GameAction.ACTION1:  # UP
-            return (self.pos_x, self.pos_y - 1)
+            return (px, py - 1)
         elif action == GameAction.ACTION2:  # DOWN
-            return (self.pos_x, self.pos_y + 1)
+            return (px, py + 1)
         elif action == GameAction.ACTION3:  # LEFT
-            return (self.pos_x - 1, self.pos_y)
+            return (px - 1, py)
         elif action == GameAction.ACTION4:  # RIGHT
-            return (self.pos_x + 1, self.pos_y)
-        return (self.pos_x, self.pos_y)
+            return (px + 1, py)
+        return (px, py)
+
+    def _find_bfs_frontier_action(self, viable_actions: list[GameAction]) -> GameAction | None:
+        """System 2 BFS: Finds shortest path to nearest unvisited frontier cell."""
+        start = (self.pos_x, self.pos_y)
+        moves = [
+            (GameAction.ACTION1, (0, -1)),  # UP
+            (GameAction.ACTION2, (0, 1)),   # DOWN
+            (GameAction.ACTION3, (-1, 0)),  # LEFT
+            (GameAction.ACTION4, (1, 0)),   # RIGHT
+        ]
+
+        legal_moves = [
+            (act, d) for act, d in moves
+            if act in viable_actions and (start, (start[0] + d[0], start[1] + d[1])) not in self.wall_edges
+        ]
+
+        # Check immediate unvisited neighbors first
+        unvisited_immediate = [
+            act for act, d in legal_moves
+            if (start[0] + d[0], start[1] + d[1]) not in self.visited_coords
+        ]
+        if unvisited_immediate:
+            return random.choice(unvisited_immediate)
+
+        # BFS on visited graph to locate closest frontier
+        queue: deque[tuple[tuple[int, int], list[GameAction]]] = deque([(start, [])])
+        seen: set[tuple[int, int]] = {start}
+
+        while queue:
+            curr, path = queue.popleft()
+            cx, cy = curr
+            for act, (dx, dy) in moves:
+                nxt = (cx + dx, cy + dy)
+                if (curr, nxt) in self.wall_edges:
+                    continue
+
+                first_action = path[0] if path else act
+                # First step must be currently legal and unblocked
+                if first_action not in viable_actions:
+                    continue
+                first_tgt = self._get_target_coord(first_action, from_pos=start)
+                if (start, first_tgt) in self.wall_edges:
+                    continue
+
+                if nxt not in self.visited_coords:
+                    # Found frontier cell!
+                    return first_action
+
+                if nxt not in seen and nxt in self.visited_coords:
+                    seen.add(nxt)
+                    queue.append((nxt, path + [act] if path else [act]))
+
+        return None
 
     def choose_action(
         self, frames: list[FrameData], latest_frame: FrameData
     ) -> GameAction:
-        """Dual-process action selection with in-episode spatial memory."""
+        """Dual-process action selection with System 2 BFS frontier planning."""
         # Handle start or Game Over reset
         if latest_frame.state in (GameState.NOT_PLAYED, GameState.GAME_OVER):
             if latest_frame.state == GameState.GAME_OVER:
@@ -108,6 +167,8 @@ class MyAgent(Agent):
             and curr_hash != 0
         ):
             self.wall_transitions.add((self.last_state_hash, self.last_action_val))
+            # Record wall edge
+            self.wall_edges.add((self.last_pos, (self.pos_x, self.pos_y)))
             # Revert speculative coordinate update since wall prevented movement
             self.pos_x, self.pos_y = self.last_pos
         else:
@@ -119,6 +180,7 @@ class MyAgent(Agent):
             self.current_level = latest_frame.levels_completed
             self.recent_states.clear()
             self.visited_coords.clear()
+            self.wall_edges.clear()
             self.pos_x = 0
             self.pos_y = 0
             self.last_pos = (0, 0)
@@ -151,6 +213,7 @@ class MyAgent(Agent):
         unblocked_candidates = [
             a for a in safe_candidates
             if (curr_hash, a.value) not in self.wall_transitions
+            and (self.last_pos, self._get_target_coord(a)) not in self.wall_edges
         ]
         viable_pool = unblocked_candidates if unblocked_candidates else safe_candidates
 
@@ -162,27 +225,51 @@ class MyAgent(Agent):
             elif len(self.recent_states) >= 6 and self.recent_states[-1] == self.recent_states[-4]:
                 is_oscillating = True
 
-        # Step 4: Weight calculation with frontier coverage
+        # Deadlock Break: If trapped in a cycle, trigger Undo (ACTION7) or probe Interact (ACTION5)
+        if is_oscillating:
+            if GameAction.ACTION7 in candidate_actions and GameAction.ACTION7 in safe_candidates:
+                action = GameAction.ACTION7
+                action.reasoning = {"system": "System1_DeadlockUndo", "reason": "Oscillation broken via Undo"}
+                self._record_action(action, curr_hash)
+                return action
+            elif GameAction.ACTION5 in candidate_actions and GameAction.ACTION5 in safe_candidates:
+                action = GameAction.ACTION5
+                action.reasoning = {"system": "System1_DeadlockProbe", "reason": "Oscillation broken via Interact"}
+                self._record_action(action, curr_hash)
+                return action
+
+        # Step 4: System 2 BFS Frontier Pathfinding
+        bfs_action = self._find_bfs_frontier_action(viable_pool)
+        if bfs_action is not None and not is_oscillating:
+            bfs_action.reasoning = {
+                "system": "System2_BFS_Frontier",
+                "pos": f"({self.pos_x},{self.pos_y})",
+                "frontier_action": bfs_action.name,
+                "visited_cells": len(self.visited_coords),
+            }
+            self._record_action(bfs_action, curr_hash)
+            return bfs_action
+
+        # Step 5: Heuristic weighted exploration (fallback)
         weights = []
         for a in viable_pool:
             w = 1.0
             if a in (GameAction.ACTION1, GameAction.ACTION2, GameAction.ACTION3, GameAction.ACTION4):
                 tgt = self._get_target_coord(a)
                 tgt_visits = self.visited_coords.get(tgt, 0)
-                # Frontier bonus: heavily prefer unexplored coordinates
                 w = 4.0 / (1.0 + 0.8 * tgt_visits)
             elif a == GameAction.ACTION5:
-                w = 3.5 if is_oscillating else 1.2  # interact / trigger switch
+                w = 2.5 if is_oscillating else 1.0
             elif a == GameAction.ACTION6:
-                w = 0.8
+                w = 0.5
             elif a == GameAction.ACTION7:
-                w = 0.1  # undo
+                w = 0.1
 
-            # Penalize walls if fallback was used
+            # Penalize known walls
             if (curr_hash, a.value) in self.wall_transitions:
                 w *= 0.02
 
-            # If oscillating, penalize repeating the last action
+            # Penalize repeating last action if oscillating
             if is_oscillating and self.last_action_val is not None:
                 if a.value == self.last_action_val:
                     w *= 0.1
@@ -191,7 +278,7 @@ class MyAgent(Agent):
 
         chosen = random.choices(viable_pool, weights=weights, k=1)[0]
         chosen.reasoning = {
-            "system": "System1_FrontierMemory",
+            "system": "System1_HeuristicFrontier",
             "pos": f"({self.pos_x},{self.pos_y})",
             "oscillating": is_oscillating,
             "fatal_known": len(self.fatal_transitions),
@@ -199,15 +286,18 @@ class MyAgent(Agent):
             "visited_cells": len(self.visited_coords),
         }
 
-        if chosen.is_complex():
-            chosen.set_data({"x": random.randint(0, 63), "y": random.randint(0, 63)})
+        self._record_action(chosen, curr_hash)
+        return chosen
+
+    def _record_action(self, action: GameAction, curr_hash: int) -> None:
+        if action.is_complex():
+            action.set_data({"x": random.randint(0, 63), "y": random.randint(0, 63)})
 
         # Speculative coordinate update for movement actions
         self.last_pos = (self.pos_x, self.pos_y)
-        if chosen in (GameAction.ACTION1, GameAction.ACTION2, GameAction.ACTION3, GameAction.ACTION4):
-            self.pos_x, self.pos_y = self._get_target_coord(chosen)
+        if action in (GameAction.ACTION1, GameAction.ACTION2, GameAction.ACTION3, GameAction.ACTION4):
+            self.pos_x, self.pos_y = self._get_target_coord(action)
 
         self.last_state_hash = curr_hash
-        self.last_action_val = chosen.value
-        self.action_history.append(chosen.value)
-        return chosen
+        self.last_action_val = action.value
+        self.action_history.append(action.value)
