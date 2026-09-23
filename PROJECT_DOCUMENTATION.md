@@ -80,10 +80,10 @@ Evaluated on the 200-task holdout benchmark (`experiments/evaluation_report.md`)
 
 ### Official Kaggle Leaderboard Scores & Version 2 Iteration
 
-| Benchmark Track | Evaluated Kernel | Version 1 Score | Version 2 Status & Enhancements |
+| Benchmark Track | Evaluated Kernel | Version 1 Score | Version 2 Score & Status |
 |---|---|---:|---|
-| **ARC-AGI-3** ($850K) | [`ser8147/arc-agi-3-dual-process-agent`](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent) | **0.24 (24%)** 🎯 | **v2 Compiled**: CRC32 state hashing, fatal trap avoidance (`GAME_OVER` pruning), wall collision detection, and frontier count-based exploration. Ready for submission at 00:00 UTC reset. |
-| **ARC-AGI-2** ($700K) | [`ser8147/arc-laya-dual-process-submission`](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission) | **0.00** | **v2 Compiled**: Full System 2 bounded DSL program synthesizer (D4 symmetries, exact color mapping, bounding boxes, hole filling, symmetry overlays, block scaling, 2-stage spatial+color compositions). 43/240 test tasks transformed. Ready for submission at 00:00 UTC reset. |
+| **ARC-AGI-3** ($850K) | [`ser8147/arc-agi-3-dual-process-agent`](https://www.kaggle.com/code/ser8147/arc-agi-3-dual-process-agent) | 0.24 | **0.28** 🎯 (+16.7% improvement via in-episode spatial memory, fatal trap avoidance, and frontier exploration). |
+| **ARC-AGI-2** ($700K) | [`ser8147/arc-laya-dual-process-submission`](https://www.kaggle.com/code/ser8147/arc-laya-dual-process-submission) | 0.00 | **0.00** (Full System 2 bounded DSL evaluated on hidden set; indicates need for multi-step composition or deep object models). |
 
 ---
 
