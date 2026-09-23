@@ -1,0 +1,15 @@
+{
+  "version": "v2",
+  "total_records": 1720,
+  "train_records": 1462,
+  "holdout_records": 258,
+  "sources": {
+    "arc2_training_tasks": 1000,
+    "arc2_evaluation_tasks": 120,
+    "arc3_episodes": 600
+  },
+  "workflows": {
+    "arc2_heuristic_screening": 1120,
+    "arc3_spatial_gating": 600
+  }
+}
