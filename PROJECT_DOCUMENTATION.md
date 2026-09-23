@@ -94,6 +94,8 @@ arc-paper-track/
 ├── README.md                      # General overview
 ├── PROJECT_DOCUMENTATION.md       # This comprehensive documentation file
 ├── EXECUTIVE-SUMMARY.md           # High-level overview & competition timeline
+├── docs/                          # Technical deep dives & engineering guides
+│   └── KAGGLE_LLM_INTEGRATION_GUIDE.md # Production guide for offline LLM execution on Kaggle
 ├── data/
 │   ├── arc-agi-2/                 # Official ARC-AGI-2 datasets (1,360 tasks)
 │   ├── arc-agi-3/                 # 25 interactive game environments
