@@ -19,10 +19,18 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
-sys.path.insert(0, str(Path(__file__).resolve().parent))
+HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
 
 from eval_arc2 import _shape_matches, evaluate  # noqa: E402
+
+
+def _real_solver():
+    """The actual candidate pool, imported lazily: `eval_arc2` is what puts `src/` on sys.path."""
+    from arc2_dual_process_solver import solve_arc_task
+    return solve_arc_task
 
 GRID_A = [[1, 2], [3, 4]]
 GRID_B = [[5, 6], [7, 8]]
@@ -180,6 +188,91 @@ def test_empty_dataset_does_not_divide_by_zero():
     assert report["official_metric_pct"] == 0.0
     assert report["coverage_pct"] == 0.0
     assert report["tasks"] == 0
+
+
+# --- malformed datasets fail loud --------------------------------------------
+#
+# A solution list that does not line up 1:1 with the test inputs corrupts the metric silently: a short
+# list shrinks the denominator and RAISES the score, a long one indexes past the attempts. Both must be
+# rejected rather than tolerated.
+
+
+def test_extra_solutions_are_rejected():
+    challenges = {"t": {"train": [{"input": GRID_A, "output": GRID_B}], "test": [{"input": GRID_A}]}}
+    try:
+        evaluate(challenges, {"t": [GRID_B, GRID_B, GRID_B]}, solver=_solver_returning(GRID_B, GRID_B))
+    except ValueError as exc:
+        assert "1 test input(s) but 3 solution(s)" in str(exc), exc
+    else:
+        raise AssertionError("an over-long solution list must be rejected")
+
+
+def test_missing_solutions_are_rejected():
+    challenges = {"t": {"train": [{"input": GRID_A, "output": GRID_B}],
+                        "test": [{"input": GRID_A}, {"input": GRID_A}, {"input": GRID_A}]}}
+    try:
+        evaluate(challenges, {"t": [GRID_B]}, solver=_solver_returning(GRID_B, GRID_B))
+    except ValueError as exc:
+        assert "3 test input(s) but 1 solution(s)" in str(exc), exc
+    else:
+        raise AssertionError("a short solution list must be rejected, not silently shrink the denominator")
+
+
+def test_task_without_test_key_is_rejected():
+    challenges = {"t": {"train": [{"input": GRID_A, "output": GRID_B}]}}
+    try:
+        evaluate(challenges, {"t": []}, solver=_solver_returning(GRID_B, GRID_B))
+    except ValueError as exc:
+        assert "no 'test' key" in str(exc), exc
+    else:
+        raise AssertionError("a task without a test key must be rejected")
+
+
+def test_solver_returning_non_list_is_counted_as_error():
+    def solver(task, trace=None) -> Any:  # deliberately violates the list contract
+        return None
+
+    report = evaluate({"t": _task()}, {"t": [GRID_B]}, solver=solver)
+    assert report["errors"] == 1, report
+    assert report["official_metric_pct"] == 0.0
+
+
+# --- end-to-end against the real solver --------------------------------------
+#
+# Every other test injects a fake solver, so nothing else proves the wiring between the solver's real
+# trace and the harness's coverage count. These two do.
+
+
+def test_real_solver_early_return_trace():
+    """The no-train-pairs path must still produce a complete trace, or coverage miscounts."""
+    trace: dict = {}
+    _real_solver()({"train": [], "test": [{"input": GRID_A}]}, trace=trace)
+    assert trace["reason"] == "no_train_pairs", trace
+    assert trace["n_candidates"] == 0
+    assert trace["n_matching"] == 0
+    assert trace["matching"] == []
+    assert trace["used_fallback"] is True
+
+
+def test_real_solver_covers_and_solves_an_identity_task():
+    """An identity task must be both covered and solved by the real candidate pool."""
+    grid = [[1, 0], [0, 2]]
+    challenges = {"t": {"train": [{"input": grid, "output": grid}], "test": [{"input": grid}]}}
+    report = evaluate(challenges, {"t": [grid]}, solver=_real_solver())
+    assert report["coverage_tasks"] == 1, report
+    assert report["official_metric_pct"] == 100.0, report
+    assert "identity" in report["matching_candidates"], report
+
+
+def test_real_solver_trace_is_cleared_between_calls():
+    """A reused trace dict must not leak state from the previous task into the next."""
+    solver = _real_solver()
+    trace: dict = {}
+    solver({"train": [{"input": GRID_A, "output": GRID_B}], "test": [{"input": GRID_A}]}, trace=trace)
+    after_first = dict(trace)
+    solver({"train": [], "test": [{"input": GRID_A}]}, trace=trace)
+    assert trace["reason"] == "no_train_pairs", trace
+    assert trace != after_first
 
 
 def _main() -> int:

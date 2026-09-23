@@ -87,6 +87,26 @@ def load_dataset(name: str) -> tuple[dict, dict]:
     return _read_json(DATA / challenges_file), _read_json(DATA / solutions_file)
 
 
+def _validate_alignment(task_ids: list[str], challenges: dict, solutions: dict) -> None:
+    """Fails loudly on a dataset whose solutions do not line up 1:1 with its test inputs.
+
+    A mismatch corrupts the metric silently: a short solution list shrinks the denominator so the score
+    goes UP, and a long one indexes past the attempts. The ARC format guarantees exactly one ground
+    truth per test input, so any deviation is a malformed dataset, not something to tolerate.
+    """
+    for task_id in task_ids:
+        task = challenges[task_id]
+        if "test" not in task:
+            raise ValueError(f"task {task_id} has no 'test' key")
+        n_test = len(task["test"] or [])
+        n_truth = len(solutions.get(task_id) or [])
+        if n_test != n_truth:
+            raise ValueError(
+                f"task {task_id}: {n_test} test input(s) but {n_truth} solution(s); "
+                "the ARC format guarantees one ground truth per test input"
+            )
+
+
 def evaluate(
     challenges: dict,
     solutions: dict,
@@ -102,6 +122,8 @@ def evaluate(
     task_ids = sorted(challenges)
     if limit:
         task_ids = task_ids[:limit]
+
+    _validate_alignment(task_ids, challenges, solutions)
 
     if timeout:
         signal.signal(signal.SIGALRM, _on_alarm)
@@ -149,6 +171,13 @@ def evaluate(
             attempts = [{"attempt_1": t["input"], "attempt_2": t["input"]} for t in task["test"]]
             trace = {}
             print(f"  ! {task_id}: {type(exc).__name__}: {exc}", file=sys.stderr)
+
+        if not isinstance(attempts, list):
+            errors += 1
+            print(f"  ! {task_id}: solver returned {type(attempts).__name__}, expected a list",
+                  file=sys.stderr)
+            attempts = []
+
         durations.append(time.perf_counter() - t0)
 
         if trace.get("n_candidates") is not None:
@@ -272,10 +301,13 @@ def main(argv: list[str] | None = None) -> int:
     reports: dict[str, dict] = {}
 
     for name in names:
-        challenges, solutions = load_dataset(name)
-        print(f"running {name}: {len(challenges)} tasks"
-              + (f" (limit {args.limit})" if args.limit else ""), flush=True)
-        reports[name] = evaluate(challenges, solutions, limit=args.limit, timeout=args.timeout)
+        try:
+            challenges, solutions = load_dataset(name)
+            print(f"running {name}: {len(challenges)} tasks"
+                  + (f" (limit {args.limit})" if args.limit else ""), flush=True)
+            reports[name] = evaluate(challenges, solutions, limit=args.limit, timeout=args.timeout)
+        except ValueError as exc:
+            raise SystemExit(f"error: malformed {name} dataset: {exc}") from None
         print(format_report(name, reports[name]))
 
     if args.json_out:
