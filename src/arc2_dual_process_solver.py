@@ -514,6 +514,44 @@ def get_panel_divider_ops(train_colors: Set[int]) -> list[tuple[str, Callable[[l
 
 
 # --- Master Task Solver (System 2 Bounded Synthesis) ---
+
+# Ablation seam. Empty by default, so the shipped behaviour is byte-for-byte unchanged; the ablation
+# tool sets it to measure each primitive family's marginal contribution. See experiments/arc2_ablation.py.
+DISABLED_FAMILIES: set[str] = set()
+
+_FAMILY_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("sub_", "color"), ("swap_", "color"), ("color_map", "color"),
+    ("rot", "D4"), ("flip", "D4"), ("transpose", "D4"), ("anti_transpose", "D4"),
+    ("identity", "D4"),
+    ("gravity", "gravity"),
+    ("crop", "crop"), ("isolate", "crop"),
+    ("largest_object", "object"), ("smallest_object", "object"), ("mask", "object"),
+    ("outline", "object"),
+    ("overlay", "overlay"), ("mirror_complete", "overlay"),
+    ("upsample", "scale"), ("downsample", "scale"),
+    ("tile", "tiling"),
+    ("fill_holes", "holes"),
+    ("count", "counting"),
+    ("kronecker", "kronecker"),
+    ("connect_collinear", "collinear"),
+    ("panel", "panel"),
+)
+
+
+def family_of(name: str) -> str:
+    """Which primitive family a candidate belongs to.
+
+    A two-stage composition (``<spatial>+color_map``) is its own family: its contribution has to be
+    measurable separately from the primitives it composes.
+    """
+    if "+" in name:
+        return "twostage"
+    for prefix, family in _FAMILY_PREFIXES:
+        if name.startswith(prefix):
+            return family
+    return "other"
+
+
 def solve_arc_task(
     task: dict, trace: dict | None = None
 ) -> list[dict[str, list[list[int]]]]:
@@ -526,6 +564,7 @@ def solve_arc_task(
         n_matching    how many of them reproduced every training pair
         matching      their names (only the first two are used to build attempts)
         used_fallback True when no candidate matched, so attempt_1 echoed the input or a constant grid
+        failures      candidate name -> first exception, for the ones that raised and were skipped
         reason        "ok", or "no_train_pairs" when the task carried no demonstrations
     """
     train_pairs = task.get("train", [])
@@ -548,6 +587,13 @@ def solve_arc_task(
 
     # Collect all candidate transformation functions
     candidates: list[tuple[str, Callable[[list[list[int]]], list[list[int]]]]] = []
+
+    # Candidates that raise are skipped, which is deliberate (some ops are undefined for some grids) but
+    # was previously silent. A primitive that raises on EVERY task is a dead primitive, and a dead
+    # primitive is indistinguishable from a useless one in every metric - exactly how `rot270` stayed
+    # broken and invisible. This records the first failure per candidate so an ablation can tell
+    # "contributes nothing" apart from "crashed".
+    failures: dict[str, str] = {}
 
     # 1. Direct Color Map
     cmap_fn = check_color_map(train_pairs)
@@ -630,8 +676,14 @@ def solve_arc_task(
                 cm = check_color_map(intermediate_pairs)
                 if cm:
                     candidates.append((f"{s_name}+color_map", lambda g, s=s_fn, c=cm: c(s(g))))
-        except Exception:
+        except Exception as exc:
+            failures.setdefault(f"{s_name}+color_map", f"{type(exc).__name__}: {exc}")
             continue
+
+    if DISABLED_FAMILIES:
+        candidates = [
+            (name, fn) for name, fn in candidates if family_of(name) not in DISABLED_FAMILIES
+        ]
 
     # Evaluate candidates against 100% of training demonstrations
     matching_solvers: list[tuple[str, Callable]] = []
@@ -639,7 +691,8 @@ def solve_arc_task(
         try:
             if all(grids_equal(fn(p["input"]), p["output"]) for p in train_pairs):
                 matching_solvers.append((name, fn))
-        except Exception:
+        except Exception as exc:
+            failures.setdefault(name, f"{type(exc).__name__}: {exc}")
             continue
 
     if trace is not None:
@@ -648,6 +701,7 @@ def solve_arc_task(
             n_matching=len(matching_solvers),
             matching=[name for name, _ in matching_solvers],
             used_fallback=not matching_solvers,
+            failures=dict(failures),
             reason="ok",
         )
 

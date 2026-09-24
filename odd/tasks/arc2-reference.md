@@ -78,7 +78,7 @@ public pipeline being replicated at scale.
 | # | Task | Status | Evidence |
 |---|---|---|---|
 | R1 | Scaffold this feature and update the governing objective | in progress | `odd/OBJECTIVE.md` revised; this file |
-| R2 | Land the ablation as a repo tool (`experiments/arc2_ablation.py`) | pending | the 14-row table, reproducible |
+| R2 | Land the ablation as a repo tool (`experiments/arc2_ablation.py`) | done | reproduces COMPLETE 45/43/42, `panel` −11, `scale` −5, `collinear` −4, and six families at exactly 0; also reports zero raising candidates |
 | R3 | Adapt the reference pipeline to run **offline**: `model_sources` for Qwen3-4B, no `pip install`, `enable_internet: False` | pending | commit-mode run completes |
 | R4 | Push and verify in commit mode (free — does not consume a submission) | pending | kernel status + log |
 | R5 | Spend **one** submission and record the score, with the 50%-of-test-data caveat | pending | leaderboard |
@@ -107,6 +107,18 @@ public pipeline being replicated at scale.
 
 ## 10. Evidence log
 
+- 2026-09-24 — **R2 done.** `experiments/arc2_ablation.py` reproduces the measurement in one command and
+  writes `experiments/arc2_ablation_results.json`. Verified output: COMPLETE 45 outputs / 43 coverage / 42
+  solved; **`panel` −11, `scale` −5, `collinear` −4**, `holes`/`kronecker`/`overlay` −2, `object`/`tiling`
+  −1; and **D4 (8 symmetry ops), `color`, `counting`, `crop`, `gravity`, `twostage` exactly 0**.
+  - A behaviour-preserving seam was added to the solver to make this measurable: `DISABLED_FAMILIES` (empty
+    by default, so shipped behaviour is unchanged — the baseline still reads 45/1076) plus `family_of()`.
+  - **The two silent `except Exception: continue` blocks in the candidate loops now RECORD the failure**
+    instead of swallowing it, and the trace carries `failures`. That matters for this tool specifically: a
+    primitive that raises on every task is dead, and a dead primitive is indistinguishable from a useless
+    one in every metric — which is exactly how `rot270` stayed broken and invisible. The tool prints a
+    **CANDIDATES THAT RAISED** section, and on this run it reports **none**, independently reconfirming the
+    verifier's finding that no other dead primitive exists.
 - 2026-09-24 — created. Governed by the revised `odd/OBJECTIVE.md`, whose §4 now ranks Theory first and marks
   Novelty **narrowed**, §6 splits the evidence into *ours* (unoccupied) and *already published* (cite only),
   §7 gains the ablation-versus-taxonomy contradiction, and §10 states the pivot.

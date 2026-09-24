@@ -1,0 +1,129 @@
+{
+  "dataset": "train",
+  "tasks": 1000,
+  "test_outputs": 1076,
+  "baseline": {
+    "correct_outputs": 45,
+    "coverage_tasks": 43,
+    "tasks_fully_solved": 42
+  },
+  "disable_one": [
+    {
+      "disabled": "panel",
+      "outputs": 34,
+      "coverage": 34,
+      "solved": 33,
+      "delta_outputs": -11
+    },
+    {
+      "disabled": "scale",
+      "outputs": 40,
+      "coverage": 38,
+      "solved": 37,
+      "delta_outputs": -5
+    },
+    {
+      "disabled": "collinear",
+      "outputs": 41,
+      "coverage": 39,
+      "solved": 38,
+      "delta_outputs": -4
+    },
+    {
+      "disabled": "holes",
+      "outputs": 43,
+      "coverage": 41,
+      "solved": 40,
+      "delta_outputs": -2
+    },
+    {
+      "disabled": "kronecker",
+      "outputs": 43,
+      "coverage": 41,
+      "solved": 40,
+      "delta_outputs": -2
+    },
+    {
+      "disabled": "overlay",
+      "outputs": 43,
+      "coverage": 41,
+      "solved": 40,
+      "delta_outputs": -2
+    },
+    {
+      "disabled": "object",
+      "outputs": 44,
+      "coverage": 42,
+      "solved": 41,
+      "delta_outputs": -1
+    },
+    {
+      "disabled": "tiling",
+      "outputs": 44,
+      "coverage": 42,
+      "solved": 41,
+      "delta_outputs": -1
+    },
+    {
+      "disabled": "D4",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    },
+    {
+      "disabled": "color",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    },
+    {
+      "disabled": "counting",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    },
+    {
+      "disabled": "crop",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    },
+    {
+      "disabled": "gravity",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    },
+    {
+      "disabled": "twostage",
+      "outputs": 45,
+      "coverage": 43,
+      "solved": 42,
+      "delta_outputs": 0
+    }
+  ],
+  "paying_families": [
+    "panel",
+    "scale",
+    "collinear",
+    "holes",
+    "kronecker",
+    "overlay",
+    "object",
+    "tiling"
+  ],
+  "redundant_families": [
+    "D4",
+    "color",
+    "counting",
+    "crop",
+    "gravity",
+    "twostage"
+  ],
+  "candidates_that_raised": {}
+}
