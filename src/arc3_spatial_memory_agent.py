@@ -62,6 +62,10 @@ class MyAgent(Agent):
 
     MAX_ACTIONS = 500
 
+    # Named so strategy probes can override them without copying ``choose_action``.
+    CLICK_WEIGHT = 0.5      # weight of ACTION6 in the heuristic pool
+    REPEAT_PENALTY = 0.1    # multiplier applied when repeating the last action while oscillating
+
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         # A per-instance RNG keeps this agent reproducible and independent of anything else that draws
@@ -287,7 +291,7 @@ class MyAgent(Agent):
             elif a == GameAction.ACTION5:
                 w = 2.5 if is_oscillating else 1.0
             elif a == GameAction.ACTION6:
-                w = 0.5
+                w = self.CLICK_WEIGHT
             elif a == GameAction.ACTION7:
                 w = 0.1
 
@@ -298,7 +302,7 @@ class MyAgent(Agent):
             # Penalize repeating last action if oscillating
             if is_oscillating and self.last_action_val is not None:
                 if a.value == self.last_action_val:
-                    w *= 0.1
+                    w *= self.REPEAT_PENALTY
 
             weights.append(max(w, 0.01))
 
@@ -315,9 +319,14 @@ class MyAgent(Agent):
         self._record_action(chosen, curr_hash)
         return chosen
 
+    def _choose_click_coords(self) -> tuple[int, int]:
+        """Click target for ACTION6. Uniform over the grid; strategy probes override this."""
+        return self.rng.randint(0, 63), self.rng.randint(0, 63)
+
     def _record_action(self, action: GameAction, curr_hash: int) -> None:
         if action.is_complex():
-            action.set_data({"x": self.rng.randint(0, 63), "y": self.rng.randint(0, 63)})
+            x, y = self._choose_click_coords()
+            action.set_data({"x": x, "y": y})
 
         # Speculative coordinate update for movement actions
         self.last_pos = (self.pos_x, self.pos_y)
