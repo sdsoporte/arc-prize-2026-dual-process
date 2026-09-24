@@ -18,6 +18,15 @@ Today `model_sources: []` on all six kernels — the model is published and cons
 writeup describes it as the mechanism that gates the submission. That gap is the admissibility problem, not
 a rubric detail.
 
+> **REVISION, 2026-09-24 — the measurement answered before the build (see §11).** The direct measurement of
+> the underlying question returned **zero headroom: 0 of 43 covered tasks**. The first candidate that
+> reproduces the training pairs is *always* the correct one, because the DSL's candidates are functionally
+> redundant wherever coverage exists. So **T3, T4 and T7 are cancelled, not deferred.**
+>
+> The goal is therefore unchanged in wording and changed in method: the paper's claim gets made true by
+> **declaring the System 1 separate and reporting the measured null**, rather than by wiring it in. That is
+> what §11 measured, and it is a stronger position than either wiring it blindly or hand-waving it.
+
 ## 2. Why ARC-AGI-2, and why a ranker rather than a pruner
 
 **Two design decisions, both forced by measurement.**
@@ -86,11 +95,11 @@ the single daily submission is spent.**
 |---|---|---|---|
 | T1 | Write the governing objective and scaffold this feature | done | `odd/OBJECTIVE.md`; this file |
 | T2 | Publish the `laya` wheel as a Kaggle dataset (offline install source) | done | `ser8147/laya-wheel`, **public**, `ready`; reproducible via `scripts/kaggle/laya_wheel_dataset.sh` |
-| T3 | Add a **ranker seam** to the ARC-2 solver and an offline evaluation harness | pending | `experiments/arc2_ranker_eval.py` output |
-| T4 | **The decision gate**: measure whether the ranker puts the correct candidate in the top 2 | pending | top-2 hit rate vs the no-ranker baseline |
+| T3 | Add a **ranker seam** to the ARC-2 solver and an offline evaluation harness | **cancelled** | T4's measurement returned 0 headroom; building it would have produced a null at the cost of days |
+| T4 | **The decision gate**: measure whether the ranker puts the correct candidate in the top 2 | **done (early)** | ran one level earlier than designed — see §11 |
 | T5 | Fix the artifact wiring: pin the HF revision, drop the spurious dataset edge, add `model_sources`, link the HuggingFace repo, retire/document the legacy lineage | pending | wiring audit + kernel metadata |
 | T6 | Deploy ARC-AGI-3 **v3** (regenerate the notebook from the current seeded agent, push, submit ~0.35) | pending | kernel version + leaderboard |
-| T7 | Submit ARC-AGI-2 — **only if T4 justifies it** | pending | gated on T4 |
+| T7 | Submit ARC-AGI-2 — **only if T4 justifies it** | **cancelled** | T4 returned zero; there is no reason to spend a submission |
 | T8 | Independent verification | pending | verifier report |
 
 ## 7. Acceptance criteria
@@ -131,7 +140,47 @@ report: top-2 hit rate  WITH ranker  vs  WITHOUT ranker (candidate order as buil
 | A model-source change alters the kernel metadata, and only a real submission exercises the rerun | A config mistake costs the day's submission | verify the commit-mode run first |
 | v3 has never been scored; predicted ~0.35 from a reproducible local 0.3508 | It may land anywhere in the 0.17–1.09 seed range | T6 |
 
-## 10. Evidence log
+## 11. The decision gate, run early — and it returned zero
+
+T4 was specified to decide whether to spend a submission. Measuring first showed it was **unmeasurable as
+designed**, because coverage and ground truth do not coincide:
+
+| set | coverage | ground truth? |
+|---|---|---|
+| EVAL (120) | **0/120** | yes — but nothing to rank |
+| TEST (240) | 5/240 deployed, 15/240 local | **no** — unmeasurable |
+| TRAIN (1000) | 43/1000 (4.3%) | yes — the only set with both |
+
+So the gate was run on the train set instead, against the underlying question rather than the proxy:
+
+```
+tasks with coverage                                       43
+  with MORE THAN ONE candidate reproducing the train      18
+  where those candidates DISAGREE on the output            1   <-- the only place a ranker could act
+  the correct output exists among the candidates           42
+  ...and is already in the current top-2 (no ranker)       42
+  position of the correct candidate in build order         [0]
+
+MAXIMUM ranker headroom: 0 tasks of 43
+```
+
+**The first matching candidate is always the correct one.** The candidates are **functionally redundant**
+wherever coverage exists — `identity+color_map` and `color_map` yield identical output — so ordering a list of
+equivalents cannot change anything. (Measured on `test[0]`; tasks with several test inputs give the official
+metric more outputs, but the conclusion is unambiguous.)
+
+**Consequences:**
+1. **T3 and T4 cancelled** — the measurement that justified them returned zero.
+2. **T7 cancelled** — no reason to spend a submission.
+3. **The System 1 has no measured role in either track.** ARC-AGI-2: pruning can only reduce coverage, and
+   ranking has zero headroom. ARC-AGI-3: the heuristic layer is already inert (92.8% single-candidate
+   pools), so a learned gate faces the same collapsed choice set, and the real decisions come from the BFS
+   frontier and deadlock branches.
+4. **This resolves `odd/OBJECTIVE.md` §9's open decision.** System 1 is **offline-measured and declared
+   separate** — not as the cheap path, but because wiring it was *measured* to have no effect. That is a
+   stronger claim in the paper than either wiring it or asserting it.
+
+## 12. Evidence log
 
 - 2026-09-24 — created. `main` == `origin/main` == `bf576e2`; this branch stacks 11 commits of prior
   verified work (`feat/arc3-eval-harness`, `feat/arc3-strategy-probe`) that are not yet on `main`.
