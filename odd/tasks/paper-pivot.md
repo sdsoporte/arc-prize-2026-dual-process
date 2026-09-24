@@ -129,7 +129,7 @@ and a nondeterministic notebook's posted score is a rerun maximum.
 | P2 | Correct the model-level card: v2's numbers + ECE + the measured status | pending | prepared, withheld per §2 |
 | P3 | Re-push the instance metadata (fixes the live v1 text with no edit) | pending | card shows `/2` and v2's numbers |
 | P4 | Correct the three false numbers, repoint the code reference, delete `paper/draft.md` §4.3 | pending | `kwriteup.sh diff` clean |
-| P5 | The T5 artifact-honesty items that fall outside `system1-wiring`'s surfaces: pin `revision=` in the training kernel, drop the spurious `arc-laya-finetune-data` source, retire/document the legacy lineage | pending | wiring audit + kernel metadata |
+| P5 | Artifact honesty that falls outside `system1-wiring`'s surfaces. **Split, because the original wording was dangerous — see §11** | in progress | §11 |
 | P6 | **The coordinated publish**: update the live writeup, the card, the draft and the README in one pass | pending | all artifacts agree |
 | P7 | Independent verification | pending | verifier report |
 | P8 | Correct the **reference kernel header** (§4): label the provenance of its three points, and carry the artifact-content finding. This surface was outside every feature when this audit was made | pending | `grep -rn "4.18" notebooks/` returns one hit |
@@ -173,3 +173,94 @@ and a nondeterministic notebook's posted score is a rerun maximum.
   artifacts. Ours: 80.7% echo / 17.8% zero grids / 1.5% content out of 259 outputs. The reference's commit
   output: 238 of 259 = `[[0]]`. Both passed `problems: 0 / VERDICT PASS`. Two new correction rows added to
   §4 and P9 recorded for the dead `rot270` in the deployed v2.
+
+## 11. P5, split — and the wording that nearly broke a kernel
+
+P5's original text read *"pin `revision=` in the training kernel, drop the spurious `arc-laya-finetune-data`
+source"*. **The second clause is true only of the ARC-AGI-2 submission kernel.** Verified 2026-09-24:
+
+```text
+kaggle datasets files ser8147/arc-laya-finetune-data
+  train.jsonl        1,405,656
+  train_v2.jsonl     3,470,067      <- the training notebook globs for exactly these names
+```
+
+So the **training kernel's** copy of that source is **essential** and must stay; a literal reading of P5
+would have removed the fine-tune's data access. The original wiring audit was correct — it said the *ARC-2
+kernel* declares the source and never reads it — but the summary here dropped the qualifier.
+
+### P5a — DONE: the base-model revision is pinned
+
+`notebooks/kaggle_laya_arc_train.ipynb` called `snapshot_download("convaiinnovations/laya")` with **no
+revision**, so a fine-tune is not reproducible: it takes whatever `main` points at on the day it runs.
+
+**Upstream moved the same day this was found** — `main` was at `55cf4c4ebb4e` as of 2026-09-24, and the
+commit history is all *"README: ... laya 0.3.x notes"*. Whether the weights moved with it was **measured,
+not assumed**: `model.safetensors` has LFS oid `891102d372688fc2…` and size 842,609,210 bytes at `55cf4c4`,
+at the previous commit `d51a650`, and at the older `c225928` — **byte-identical across all three**. The
+drift was documentation-only, so the shipped model's base is unaffected. The pin (`MODEL_REVISION =
+"55cf4c4ebb4ebe31b2550e8bdf3bd21b99753851"`) makes that a guarantee rather than an observation from
+commit titles. Applied and committed; takes effect on the next kernel push.
+
+### P5b — DONE: the spurious source was on the submission kernel
+
+`notebooks/arc2_submission_kernel/kernel-metadata.json` declared `ser8147/arc-laya-finetune-data` while its
+notebook — a model-free symbolic solver whose only input is the competition's own test challenges — never
+reads it. Emptied in commit `3b9179e`.
+
+### P5c — the legacy lineage: document, do not delete
+
+Three early kernels plus a dataset sit disconnected from the model:
+
+| artifact | last run | note |
+| --- | --- | --- |
+| `ser8147/laya-gate-finetune` | 2026-09-21 | superseded |
+| `ser8147/fork-of-laya-gate-finetune` | 2026-09-21 | a fork of the above |
+| `ser8147/arc-laya-fine-tune` | 2026-09-22 | superseded |
+| `ser8147/arc-laya-finetune` | 2026-09-23 | **the current training kernel** — note the hyphen |
+
+Nothing consumes any of them. `arc-laya-finetune` and `arc-laya-fine-tune` differ by one hyphen, which is
+exactly the kind of pair that invites editing the wrong one. **They stay published and are documented as
+retired**, with the spelling hazard named, because deleting a published kernel is a worse failure mode than
+describing it.
+
+### P2 — PREPARED, withheld per §2: the model-level card
+
+`models/kaggle_model_hub/model-metadata.json` currently states `Brier Score Calibration: 0.0818` — **v1's
+number while the model serves v2** — omits ECE entirely, and describes the intended use as *"System 1
+decision gating"*, the claim that would contradict the rewritten writeup. The replacement text, ready to
+apply in one pass:
+
+```markdown
+# ARC Laya Decision Engine
+
+A specialized 421M non-autoregressive decision model fine-tuned on ARC-AGI task traces and
+sequential game environments.
+
+### Model Characteristics
+* **Parameters:** 421M
+* **Architecture:** Non-autoregressive encoder with multi-head calibrated decision heads
+* **Inference Latency:** < 50ms per state on CPU / GPU
+* **Token Overhead:** 0 tokens (logit/classification output)
+* **Accuracy (v2, 1,720 ARC cases):** 89.92%
+* **Brier Score Calibration:** 0.1020
+* **Expected Calibration Error:** 0.2392
+
+### Intended Use
+A declared **offline** component. It is **not wired into any submission**: `model_sources` is empty
+on all six competition kernels, and neither submission kernel imports it. It ships as a measured
+artifact and as a hypothesis this project tested and rejected -- a gate built on it has zero headroom
+(0 of 43 covered tasks; `odd/tasks/system1-wiring.md` §11).
+
+### Known limitation
+The probabilities are **not** well calibrated: Brier 0.1020 with ECE 0.2392. Do not use this model
+as a confidence source.
+```
+
+### P3 — already satisfied, verify only
+
+The live instance list shows **version 2** with `"Version 2: Fine-tuned on 1720 ARC cases, 89.92%
+accuracy, Brier 0.102…"`, which matches the repo's corrected instance file at
+`models/laya_arc_finetuned_v2/laya_finetuned_typed_decisions/model-instance-metadata.json`. No re-push is
+needed; `§4`'s "v1's text with `versionNumber: 2`" no longer describes the live artifact. Confirm at apply
+time rather than trusting this note.
