@@ -141,6 +141,9 @@ Our DSL's overlap with that published solver is **~4–5 families out of ~30** (
 | `paper/draft.md`, `models/kaggle_model_hub` | Laya v1 numbers (88.24%, Brier 0.0818) | the model hub serves **v2** (89.92%, Brier 0.1020, **ECE 0.2392**) |
 | Model card | "System 1 decision screening" | `model_sources: []` on all six kernels — **nothing consumes it** |
 | Both submission kernels | describe a dual-process System 1 | neither imports the model; both are model-free |
+| `notebooks/arc2_reference_kernel/submission.ipynb` (public kernel header) | `0.84%`, `4.18%` and `~30` presented as **one axis** | the first two are **train** (pass@2 on 1,076 public training outputs); the third is a **leaderboard**. Our ablation is **4.18% train against 0.00% held out**. This surface was in **no feature's edit surfaces** until 2026-09-24, so it would have survived the coordinated pass — see `paper-pivot` P8 |
+| the deployed ARC-AGI-2 solver (v2) | a working symbolic program synthesiser | it carried a **dead `rot270`** (`zip(*g)[::-1]` raises `TypeError: 'zip' object is not subscriptable`), so every rot270 candidate was silently dropped |
+| what we actually submitted | a submission of 240 tasks | 259 outputs: **80.7% echoed the input, 17.8% were zero grids, 1.5% carried content** — 98.5% non-informative, and the notebook printed `✅ … 240 tasks!` in 0.7026 s |
 | `paper/draft.md` §4.3 and the System 1 taxonomy | System 1 classifies "geometry, flood_fill, counting, extrapolation" | the ablation shows geometry, flood-fill and counting contribute **zero** while `panel`/`scale`/`collinear` carry the solver — **a working gate would classify the wrong axes** |
 | anywhere a leaderboard score is quoted | a bare number | it is measured on **50% of the test data**, and our agent's score spreads **6.3x** across seeds |
 

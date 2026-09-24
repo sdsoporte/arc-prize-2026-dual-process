@@ -47,6 +47,33 @@ Not "our architecture works", but:
    zero**. Answers a public open question (`forum 742790` asks *"what primitive would you try first?"*, and
    its two families are the two that pay nothing) and explains 45/1076 against that notebook's 9/1076.
 
+   **The ablation must be reported as a train/eval pair, never as a single number.** Measured
+   (`experiments/arc2_baseline.json`):
+
+   | set | tasks | outputs | official metric | coverage |
+   | --- | --- | --- | --- | --- |
+   | **train** | 1,000 | 1,076 | **4.1822%** | 43/1,000 (4.3%) |
+   | **eval** (held out) | 120 | 172 | **0.00%** | 0/120 (0.0%) |
+   | **deployed** (leaderboard) | 240 | — | **0.00** | — |
+
+   The held-out column is 0.00%, so the 4.18% is **in-distribution fitting on the 1,000 tasks the
+   primitive library was designed against**, and the paper must say so in the same breath. The matching
+   candidates are dominated by `colour_map` composites (`largest_object+colour_map` 7, `colour_map` 5,
+   `identity+colour_map` 5, …) — the most memorizable family in the set. `eval` `miss_reasons`:
+   **164 of 172 outputs echoed the input**, 5 wrong shape, 3 right shape wrong cells.
+
+   **And the artifact-level measurement of what we actually submitted**, from the kernel output
+   (`kaggle kernels output ser8147/arc-laya-dual-process-submission`, 259 outputs = 240 tasks x test
+   inputs): **209 echoes (80.7%), 46 zero grids (17.8%), 4 with content (1.5%)** — so **98.5% of what we
+   submitted carried no information**, while the notebook printed
+   `✅ Generated /kaggle/working/submission.json successfully (361.2 KB) with 240 tasks!` in **0.7026 s**.
+   The same artifact analysis on the **reference** implementation's commit output gives **238 of 259
+   outputs = `[[0]]` (91.9%)** and 21 with content — and **both artifacts passed `problems: 0 / VERDICT
+   PASS`**. That contrast is the thesis, measured rather than argued: the reference's filler is a *budget*
+   artifact (`ARC_REFERENCE_COMMIT_BUDGET=1800` against the competition's 12 h) while ours is a *capability*
+   artifact (it ran to completion on all 240 tasks in under a second and still produced 98.5% filler), and
+   **the submission format cannot tell the two apart**. It is why the paper reports coverage alongside score.
+
 Plus the two measured negatives: a learned gate has **zero headroom** (0 of 43 covered tasks), and the
 ARC-AGI-3 agent's score is RNG-dominated with an inert heuristic layer (92.8% one-candidate pools).
 
@@ -64,6 +91,9 @@ The primitive DSL and its coverage verdict (`arc-baseline-rebuild`), the `hash(s
 | live writeup | `0.28 (28% Solved)` | the metric is 0–100 where 100 = human, so **0.28%** |
 | live writeup | `synthesizing rules for 17.9% of benchmark tasks` | **2.1%** coverage deployed, 6.2% local |
 | live writeup | code submission reference → the ARC-AGI-2 kernel | → the **ARC-AGI-3** kernel, where we hold the **median** of 3,284 teams |
+| `notebooks/arc2_reference_kernel/submission.ipynb` (kernel header, **public**) | *"three points on one axis: a minimal public solver (0.84%), our primitive ablation (4.18%), and this reference (the field's ~30 band)"* | the first two are **train** pass@2 on 1,076 public training outputs; the third is a **leaderboard**. Putting an in-distribution number and a held-out number on one axis is the exact error this project forbids — label all three, and state that 4.18% is train against 0.00% held out |
+| any artifact describing the deployed ARC-AGI-2 solver | a working symbolic program synthesiser | the deployed v2 carried a **dead `rot270`**: `[list(x) for x in zip(*g)[::-1]]` raises `TypeError: 'zip' object is not subscriptable`, so every rot270 candidate was silently dropped (deployed notebook md5 `a9acb4eeb2`, 666 lines, against `src/`'s 746) |
+| any artifact quoting the solver's capability as one number | a single percentage | the honest triple is **train 4.1822% (45/1076) / eval 0.00% (0/172) / deployed 0.00%**, and of the 259 outputs actually submitted **80.7% echoed the input, 17.8% were zero grids, 1.5% carried content** |
 | model card (model level) | `Brier 0.0818`, no ECE, "System 1 decision gating" | v2's `0.1020` **and `ECE 0.2392`**, plus the measured status |
 | model card (instance level) | v1's text with `versionNumber: 2` | just needs a **re-push**; the repo file is already correct |
 | `paper/draft.md` §4.3 | the dual-process trade-off ablation | **delete**; and the System 1 taxonomy (geometry, flood_fill, counting, extrapolation) is contradicted by the ablation |
@@ -88,6 +118,7 @@ and a nondeterministic notebook's posted score is a rerun maximum.
 - `models/laya_arc_finetuned_v2/laya_finetuned_typed_decisions/model-instance-metadata.json`
 - `notebooks/kaggle_laya_arc_train.ipynb`
 - `notebooks/arc2_submission_kernel/kernel-metadata.json`
+- `notebooks/arc2_reference_kernel/submission.ipynb`
 - `README.md`
 
 ## 7. Tasks
@@ -101,6 +132,8 @@ and a nondeterministic notebook's posted score is a rerun maximum.
 | P5 | The T5 artifact-honesty items that fall outside `system1-wiring`'s surfaces: pin `revision=` in the training kernel, drop the spurious `arc-laya-finetune-data` source, retire/document the legacy lineage | pending | wiring audit + kernel metadata |
 | P6 | **The coordinated publish**: update the live writeup, the card, the draft and the README in one pass | pending | all artifacts agree |
 | P7 | Independent verification | pending | verifier report |
+| P8 | Correct the **reference kernel header** (§4): label the provenance of its three points, and carry the artifact-content finding. This surface was outside every feature when this audit was made | pending | `grep -rn "4.18" notebooks/` returns one hit |
+| P9 | Put the deployed v2's **dead `rot270`** into the deployment description, and decide whether `notebooks/arc2_submission_kernel/` gets the same builder treatment as the ARC-AGI-3 notebook | pending | the notebook is 666 lines against `src/`'s 746 |
 
 ## 8. Acceptance criteria
 
@@ -128,3 +161,15 @@ and a nondeterministic notebook's posted score is a rerun maximum.
   model-card correction was **prepared and deliberately withheld**.
 - 2026-09-24 — the model card was found to be CLI-editable (`kaggle models update` and
   `kaggle models instances update`), which makes P2/P3 possible at all.
+- 2026-09-24 — **claim audit for the unlabelled train number.** `grep` for `4.18`/`1076`/`0.84` across the
+  repository found the claim **already correctly labelled everywhere except one public artifact**:
+  `README.md`, `EXECUTIVE-SUMMARY.md`, `PROJECT_DOCUMENTATION.md` and `paper/draft.md` contain no mention of
+  the ablation at all; `experiments/arc2_baseline.json` is keyed `train`/`eval`; and `odd/OBJECTIVE.md`'s
+  table column is already headed *"public training outputs (pass@2)"*. The single exception is the
+  **reference kernel's header cell**, which places `0.84%` and `4.18%` (both train) on one axis with
+  `~30` (a leaderboard) — and `notebooks/arc2_reference_kernel/submission.ipynb` was in **no feature's edit
+  surfaces**, so it would have survived the coordinated pass. Recorded as P8 and added to §6.
+- 2026-09-24 — **artifact-level evidence added to §3a.** `kaggle kernels output` reaches the real submission
+  artifacts. Ours: 80.7% echo / 17.8% zero grids / 1.5% content out of 259 outputs. The reference's commit
+  output: 238 of 259 = `[[0]]`. Both passed `problems: 0 / VERDICT PASS`. Two new correction rows added to
+  §4 and P9 recorded for the dead `rot270` in the deployed v2.
