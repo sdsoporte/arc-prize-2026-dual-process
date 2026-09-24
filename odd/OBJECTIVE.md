@@ -49,16 +49,41 @@ The $375K pool is reserved for papers scoring **above 4.5/5**, which requires 27
 places** ($50K / $20K / $5K), which are a **ranking among ~202 papers**, not a threshold. That is the
 contestable prize, and it is decided by paper quality.
 
+### 3.1 There is a SECOND rubric-judged prize, and we are not playing it
+
+ARC-AGI-2 carries a **$275,000 Grand Prize awarded to the single highest-scoring Solution Writeup**, judged on
+the **same six criteria**, equally weighted. So the same body of work can be entered twice, with the Progress
+narrative adapted:
+
+| | Paper Track | ARC-AGI-2 Grand Prize |
+|---|---|---|
+| places | 3 ($50K/$20K/$5K) + the threshold pool | **one, winner-take-all, $275K** |
+| field | ~203 writeups, with a visible "View Writeups" tab that invites entry | **unknown — currently zero**. The mechanism is a forum post designated from the team page *after* the competition closes, described only in a four-year-old product announcement |
+| Accuracy | we may cite ARC-AGI-3 (0.28, the **median** of 3,284 teams) | fixed to ARC-AGI-2 (`0.00`, bottom third) |
+| Progress | "a top score on ARC Prize" | "**85% on ARC-AGI-2**" |
+
+Verified: the **Solution filter returns "No discussions found" in both ARC-AGI-2 and ARC-AGI-3** — nobody has
+designated a writeup yet, because designation cannot happen before close. **That is a low-visibility
+instrument, and here it is an advantage.** It is also monitorable: if the filter is still near-empty close to
+the deadline, the effective field is a handful.
+
+### 3.2 A third variance source nobody quotes
+
+Both leaderboards state: *"This leaderboard is calculated with approximately **50% of the test data**. The
+final results will be based on the other 50%, so the final standings may be different."* Every published
+score is therefore measured on half the test set. Added to the agent's RNG (6.3x) and to submission sampling,
+this means **no score in this project may be quoted without those caveats.**
+
 ## 4. Sub-objectives, ranked by where the points are
 
 | # | Criterion | Our position | What to do |
 |---|---|---|---|
 | 1 | **Completeness** | **broken** | Make the writeup describe what the submissions actually do, or state explicitly what they do not. Remove every number that cannot be reproduced from the repository. |
-| 2 | **Theory** | **strongest asset** | Four measured results, none of them argued: see §6. |
-| 3 | **Progress** | strong | The calibration method lets anyone measure an agent against human play **without spending a submission per day**. |
-| 4 | **Universality** | strong | Human-replay calibration is domain-agnostic: it validates any agent harness against known-good human play. |
-| 5 | **Novelty** | strong | No public ARC work ships an offline human-replay calibration benchmark. |
-| 6 | **Accuracy** | **unwinnable** | 0.28 of 100 against a leader at 19.40. Improve only if cheap; never at the cost of criteria 1–5. |
+| 2 | **Theory** | **the primary asset** | Four measured results, three of them unoccupied by anyone else: see §6a. |
+| 3 | **Progress** | strong | The calibration instrument lets anyone measure an agent against human play **without spending a submission per day**; the ablation tells the field which primitives pay and which pay nothing. |
+| 4 | **Novelty** | **narrowed — cite, never claim** | Only three things are unoccupied (§6a). The primitive DSL, the coverage wall and the `hash(str)` non-determinism are **already public** (§6b); claiming them would be a checkable error. |
+| 5 | **Universality** | strong | Human-replay calibration is domain-agnostic: it validates any agent harness against known-good human play. |
+| 6 | **Accuracy** | weak, but **improvable on ARC-AGI-2** | 0.28 is the **median** of 3,284 teams on ARC-AGI-3. On ARC-AGI-2 we sit at the floor with 722 teams (33.2%) — and a **declared reference implementation** can reach ~30. |
 
 ## 5. Non-goals
 
@@ -68,25 +93,42 @@ contestable prize, and it is decided by paper quality.
 - **Do not re-argue the architecture.** Make it true or declare it separate; do not defend it in prose.
 - **Do not overstate.** Every published number must be reproducible from the repository.
 
-## 6. The evidence base — four measured results
+## 6. The evidence base
 
-These are the paper's real contribution. Each is measured, not asserted.
+### 6a. Ours, and unoccupied — the actual contribution
 
-1. **Human-play calibration benchmark.** The `jihangli1121/arc-agi-3-replays-v1` replays drive the OFFLINE
-   engine: **24 of 25 reproduce step for step**, and the official scorer assigns human play **89.6774/100**
-   on the same instrument that scores our agent **0.2017**. Shipped as a regression check
-   (`experiments/arc3_calibration.py`).
-2. **The primitive-DSL coverage wall (ARC-AGI-2).** Coverage — a candidate that reproduces every training
-   pair — is **0/120 on the public evaluation set** for both solver generations, **5/240 (2.1%)** deployed
-   and **15/240 (6.2%)** local on the test set. Neither solves anything on eval. The measured ceiling of a
-   whole-grid primitive pool is ~7% even on training data.
-3. **Score is dominated by the RNG.** 13 sweeps of byte-identical agent code spread over **0.173 to 1.090
-   — a 6.3x range**. Consequence: the published "+16.7% improvement" (0.24 → 0.28) is one draw from that
-   distribution.
-4. **The agent's heuristic layer is inert.** `CLICK_WEIGHT` set to `1e6` **and** to `0.0` produce identical
-   scores; likewise `REPEAT_PENALTY` at `0.0` and `1e6`. Cause, instrumented: **92.8% of `random.choices`
-   invocations receive a pool of exactly one candidate**, where weights cannot matter. Real decisions come
-   from the BFS frontier planner.
+1. **A human-play calibration instrument (ARC-AGI-3).** The `jihangli1121/arc-agi-3-replays-v1` replays drive
+   the OFFLINE engine: **24 of 25 reproduce step for step**, and the official scorer assigns human play
+   **89.6774/100** on the same instrument that scores our agent **0.2017**. Shipped as a regression check
+   (`experiments/arc3_calibration.py`). **No public notebook ships one**, and the replays dataset has no
+   linked notebook.
+2. **An audit of the benchmark's own baseline.** The score is `min(100, baseline_actions / actions × 100)`,
+   but `baseline_actions` is **not the human play published as ground truth**: only **33 of 183** levels match
+   exactly, the replay human is at-or-faster on **142 of 183**, and the baseline totals **17,135** actions
+   against the humans' **14,798**. A slower baseline means a larger ratio, so **scores are inflated relative
+   to observable human play**, by a level-dependent amount (`su15` level 7 differs by **6.25x**). Checkable by
+   anyone with the public replays and the environment metadata.
+3. **A measured primitive ablation (ARC-AGI-2).** Leave-one-out over the operator families:
+   **`panel` −11, `scale` −5, `collinear` −4** carry the solver, while **eight D4 symmetry operators, colour
+   mapping, gravity, cropping, counting and the two-stage composition contribute exactly ZERO.** This answers
+   a public open question — forum `742790` asks *"what primitive would you try first?"*, and its two families
+   are the two that pay nothing — and it explains our **45/1076** against that notebook's **9/1076**.
+4. **Two negative results, measured.** A learned System-1 gate has **zero headroom** (0 of 43 covered tasks;
+   the first matching candidate is always the correct one, because the candidates are functionally
+   redundant). And the ARC-AGI-3 agent's score is RNG-dominated with an inert heuristic layer (92.8% of
+   selection calls receive a one-candidate pool).
+
+### 6b. Already published elsewhere — cite, never claim
+
+| Finding we held | Who published it first |
+|---|---|
+| A primitive DSL covers ~nothing of ARC-AGI-2 | `yusuketogashi/arc-baseline-rebuild` — *"exact symbolic rules did not cover any"* |
+| Run-to-run variance from `hash(str)` seeding, and the `zlib.crc32` remedy | ARC-AGI-2 forum **742027** (19-sep) — the same diagnosis and the same fix |
+| A minimal solver = 8 symmetries + a global colour map | ARC-AGI-2 forum **742790** (23-sep) |
+| The ARC-AGI-2 field converges on one public pipeline | measured: **745 of 2,172 teams (34.3%) sit in the 30–40 band, only 4 exceed 40** |
+
+Our DSL's overlap with that published solver is **~4–5 families out of ~30** (`d4_exact`, `d4_color_map`,
+`integer_upscale`, `integer_tile`); the other families do not appear there. Real, but partial.
 
 ## 7. Honest current state — what is false today
 
@@ -99,6 +141,8 @@ These are the paper's real contribution. Each is measured, not asserted.
 | `paper/draft.md`, `models/kaggle_model_hub` | Laya v1 numbers (88.24%, Brier 0.0818) | the model hub serves **v2** (89.92%, Brier 0.1020, **ECE 0.2392**) |
 | Model card | "System 1 decision screening" | `model_sources: []` on all six kernels — **nothing consumes it** |
 | Both submission kernels | describe a dual-process System 1 | neither imports the model; both are model-free |
+| `paper/draft.md` §4.3 and the System 1 taxonomy | System 1 classifies "geometry, flood_fill, counting, extrapolation" | the ablation shows geometry, flood-fill and counting contribute **zero** while `panel`/`scale`/`collinear` carry the solver — **a working gate would classify the wrong axes** |
+| anywhere a leaderboard score is quoted | a bare number | it is measured on **50% of the test data**, and our agent's score spreads **6.3x** across seeds |
 
 ## 8. Definition of done
 
@@ -123,7 +167,30 @@ must land before it; the paper can continue to Nov 9.
 | Merging branches, pushing to GitHub | **Sergio** | |
 | Task decomposition and implementation | el Gentleman | within an approved objective |
 
-## 10. How this document is used
+## 10. The pivot
+
+**What the paper becomes.** Not "our architecture works", but:
+
+> *An offline human-play ruler for ARC-AGI-3, an audit of the benchmark's own baseline, and a measured map of
+> which primitive families actually pay — plus the negative results of our own architecture, which the
+> instrument made visible.*
+
+**Three points on one measured axis (ARC-AGI-2):**
+
+| approach | public training outputs (pass@2) |
+|---|---|
+| the minimal public solver (symmetries + colour map) | 9/1076 (0.84%) |
+| **our ablation** — the families that pay | **45/1076 (4.18%)** |
+| the field's full neural pipeline (declared reference implementation) | ~30 on the leaderboard |
+
+**What must be declared, not claimed:** the DSL, the coverage wall and the `hash(str)` finding are public
+(§6b). The Laya gate moves from "our architecture" to "a hypothesis we test and reject", with §6a's zero
+headroom as the evidence.
+
+**What must be corrected in the live writeup:** the three false numbers (§7), the code reference repointed to
+the ARC-AGI-3 kernel where we hold the **median** of 3,284 teams, and `paper/draft.md` §4.3 deleted.
+
+## 11. How this document is used
 
 This is the governing objective. Work is tracked under `odd/tasks/<feature>.md`, one feature per coherent
 unit, and each feature references the sub-objective it serves. A feature that serves no sub-objective in §4

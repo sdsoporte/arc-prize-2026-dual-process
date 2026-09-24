@@ -97,8 +97,13 @@ the single daily submission is spent.**
 | T2 | Publish the `laya` wheel as a Kaggle dataset (offline install source) | done | `ser8147/laya-wheel`, **public**, `ready`; reproducible via `scripts/kaggle/laya_wheel_dataset.sh` |
 | T3 | Add a **ranker seam** to the ARC-2 solver and an offline evaluation harness | **cancelled** | T4's measurement returned 0 headroom; building it would have produced a null at the cost of days |
 | T4 | **The decision gate**: measure whether the ranker puts the correct candidate in the top 2 | **done (early)** | ran one level earlier than designed — see §11 |
-| T5 | Fix the artifact wiring: pin the HF revision, drop the spurious dataset edge, add `model_sources`, link the HuggingFace repo, retire/document the legacy lineage | pending | wiring audit + kernel metadata |
+| T5 | Fix the artifact wiring: pin the HF revision, drop the spurious dataset edge, link the HuggingFace repo, retire/document the legacy lineage. **`add model_sources` is CANCELLED** — under §11's pivot the model is a declared offline component, so it must stay uncabled | pending | wiring audit + kernel metadata |
 | T6 | Deploy ARC-AGI-3 **v3** (regenerate the notebook from the current seeded agent, push, submit ~0.35) | pending | kernel version + leaderboard |
+
+> **Scope after the pivot (2026-09-24).** With T3/T4/T7 cancelled, this feature is no longer about making the
+> paper's architecture true. It is now about making the **artifacts honest** (T5) and landing one bounded
+> deploy (T6). The paper work moved to its own feature, and the ARC-AGI-2 number to `arc2-reference`.
+> See `odd/OBJECTIVE.md` §10 and §11.
 | T7 | Submit ARC-AGI-2 — **only if T4 justifies it** | **cancelled** | T4 returned zero; there is no reason to spend a submission |
 | T8 | Independent verification | pending | verifier report |
 
