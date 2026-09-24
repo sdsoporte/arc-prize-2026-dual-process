@@ -258,6 +258,11 @@ Observed snapshot, 2026-09-23 (trimmed):
    - [PARTICIPANT] writeupId=86160 writeUpId=114706 state=published
 ```
 
+> **Note on the Paper Track deadline shown above.** The dump is kept verbatim: it is the CLI's actual
+> `deadline` field (`2026-11-09T23:59:00.000Z`), so it is evidence of what the tool returned, not a claim
+> that the deadline is Nov 9. The governing rules page states **November 8, 2026**, and **supersedes this
+> field** (see section 8).
+
 **How to read it for drift.** Compare each section against the repo:
 
 | Section | Repo counterpart | Drift signal |
@@ -813,7 +818,7 @@ was verified.
 |---|---|---|
 | ARC-AGI-2 final submission deadline | `2026-11-02T23:59:00.000Z` | `kagglesdk` `ApiGetCompetition.deadline` |
 | ARC-AGI-3 final submission deadline | `2026-11-02T23:59:00.000Z` | `kagglesdk` `ApiGetCompetition.deadline` |
-| Paper Track final submission deadline | `2026-11-09T23:59:00.000Z` | `kagglesdk` `ApiGetCompetition.deadline`; rules page Timeline says "November 9, 2026" |
+| Paper Track final submission deadline | `2026-11-08T23:59:00.000Z` | `https://arcprize.org/competitions/2026` → Key Dates ("November 8, 2026 — Papers due"). **Note:** `kagglesdk` `ApiGetCompetition.deadline` returns `2026-11-09T23:59:00.000Z`; the platform field disagrees and the **rules page supersedes it** |
 | ARC-AGI-2 entry / team-merger deadline | `2026-10-26T23:59:00.000Z` | `kagglesdk` `ApiGetCompetition.newEntrantDeadline` |
 | ARC-AGI-3 entry / team-merger deadline | `2026-10-26T11:59:00.000Z` | `kagglesdk` `ApiGetCompetition.newEntrantDeadline` |
 | Paper Track entry deadline | none exposed | `newEntrantDeadline` absent for the Paper Track |
@@ -835,7 +840,12 @@ Note the ARC-AGI-3 entry deadline is `11:59:00Z`, not `23:59:00Z`. Publishing th
 would be wrong by 12 hours.
 
 Since all three deadlines are in **November 2026**, code must be frozen on ARC-AGI-2/3 first
-(`2026-11-02`), and the paper is due a week later (`2026-11-09`).
+(`2026-11-02`), and the paper is due (`2026-11-08`), six days later, per `https://arcprize.org/competitions/2026`
+→ Key Dates. The date is `2026-11-08`, not the platform `deadline` field's `2026-11-09`: the rules page governs,
+and the Paper Track allows only **one submission** (Rule 2.2.a), so there is no late path.
+
+For the ARC Prize 2026 prize breakdown and the eligibility conditions attached to those prizes, see
+section 11.
 
 ---
 
@@ -967,6 +977,10 @@ as established:
   See `docs/ENVIRONMENT.md`.
 - **Whether `kaggle models instances list` will change.** The trap is current behaviour of CLI 2.2.4, not
   a documented guarantee.
+- **The Paper Track's own prize breakdown.** `odd/OBJECTIVE.md` §3 records it as
+  "$450K: top-3 $50K/$20K/$5K + a $375K threshold pool", but the ARC Prize overview page fetched here shows
+  only "Paper Prize — Awards for papers that advance our understanding", with **no breakdown**. That figure
+  stays **unconfirmed** until the paper page itself is read.
 - **Why ARC-AGI-3 episodes return "No episodes found".** Not determined; possibly a timing/phase
   condition. No conclusion is drawn.
 - **The exact ARC-AGI-2/3 code-freeze semantics** (e.g. whether a kernel version submitted before the
@@ -976,3 +990,43 @@ as established:
   verbatim on 2026-09-23 and they conflict. Not resolved here.
 - **Quota accounting for kernels.** `kaggle quota` reports remaining hours; how a specific run is
   measured against them was not tested.
+
+---
+
+## 11. ARC Prize 2026 prize structure and eligibility
+
+Recorded from `https://arcprize.org/competitions/2026` (and its ARC-AGI-3 materials). These are the prize
+amounts and the conditions attached to them; the conditions are requirements, not trivia.
+
+### 11.1 ARC-AGI-3 — $850K total
+
+```text
+ARC-AGI-3 total: $850K
+  Grand Prize (100%)   $700K   first eligible agent to reach 100%; rolls over if unwon
+  Top Score Award      $ 75K   guaranteed: 40/15/10/5/5 K
+  Milestone Prizes     $ 75K   guaranteed
+     Milestone #1 (Jun 30)   1st $25K, 2nd $10K, 3rd $2.5K
+     Milestone #2 (Sep 30)   1st $25K, 2nd $10K, 3rd $2.5K
+```
+
+Eligibility for the milestone money, quoted:
+
+> *"Participants who open source their solutions by the milestone deadlines are eligible for milestone
+> prize money."*
+
+### 11.2 Eligibility conditions for all prizes
+
+- *"All leading participants are expected to open source their solutions to be eligible for a prize."*
+- *"Internet access is not available during Kaggle evaluation (no API-based systems like GPT/Claude/etc.)"*
+- *"All prizes require reproducible, open-source submissions"*, and solutions must go through the
+  designated Kaggle competition for their track.
+
+### 11.3 Our position against the ARC-AGI-3 milestones — assessed, and not actionable
+
+- **Milestone #2 is 2026-09-30.**
+- Our ARC-AGI-3 entry is **rank 1729 of 3287 at 0.28**, against a leaderboard top of **19.40 / 7.10 / 7.01**.
+- A top-3 place needs roughly **7** — about **twenty-five times** our score.
+- **Eligibility is already satisfied** because this repository is public.
+
+**Conclusion: no action is required by the milestone deadline.** This is recorded to close the question,
+not to open one; it is **not** an actionable target.

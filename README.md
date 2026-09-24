@@ -2,7 +2,8 @@
 
 > **Competition:** [ARC Prize 2026 - Paper Track](https://www.kaggle.com/competitions/arc-prize-2026-paper-track)
 > **Prize Pool:** $450,000 USD
-> **Deadline:** November 9, 2026
+> **Deadline:** November 8, 2026
+> **Source:** [arcprize.org/competitions/2026](https://arcprize.org/competitions/2026) → Key Dates (the rules page governs; Kaggle's platform deadline field shows Nov 9 and is superseded)
 > **Teams:** ~199 (as of Sep 22, 2026)
 > **Status:** ✅ Enrolled
 
@@ -94,7 +95,7 @@ The AI must discover this rule from 2-3 examples and apply it to a new grid.
 Mar 25, 2026  ─── Competition started
 Sep 22, 2026  ─── TODAY (48 days remaining)
 Nov 02, 2026  ─── ARC-AGI-2 & ARC-AGI-3 code deadline
-Nov 09, 2026  ─── Paper Track submission deadline
+Nov 08, 2026  ─── Paper Track submission deadline
 ```
 
 > ⚠️ Your CODE must be submitted to ARC-AGI-2/3 BEFORE Nov 2. The paper is due 1 week later.

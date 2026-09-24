@@ -3,7 +3,7 @@
 > **Status:** governing document. Supersedes nothing; it was simply missing until now.
 > **Owner:** Sergio D (@ser8147)
 > **Created:** 2026-09-24
-> **Deadlines:** code freeze **2026-11-02 23:59 UTC** · paper due **2026-11-09 23:59 UTC**
+> **Deadlines:** code freeze **2026-11-02 23:59 UTC** · paper due **2026-11-08 23:59 UTC** ([arcprize.org/competitions/2026](https://arcprize.org/competitions/2026) → Key Dates; the rules page governs over Kaggle's Nov 9 platform field)
 
 ---
 
@@ -34,6 +34,14 @@ virtue, it is the admissibility condition. A paper describing an architecture it
 implement fails the very premise that makes it eligible.
 
 ## 3. The ranking arithmetic, stated before it is too late
+
+> **Unconfirmed: the Paper Track prize structure.** The prize figures this section reasons over
+> (top-3 $50K/$20K/$5K and the $375K threshold pool) — and the total the repo elsewhere quotes as
+> "$450K" — are **unconfirmed pending the paper page**. The ARC Prize overview page fetched on 2026-09-24
+> shows only *"Paper Prize — Awards for papers that advance our understanding"* with **no breakdown**.
+> Treat every Paper Track prize amount here as unverified until `https://arcprize.org/competitions/2026/paper`
+> is read. The figures are kept, not asserted; see the matching entry under `docs/KAGGLE_OPS.md` §10
+> ("What is NOT verified").
 
 Six criteria, each 0–5, averaged: **Accuracy · Universality · Progress · Theory · Completeness · Novelty**.
 
@@ -158,7 +166,7 @@ Our DSL's overlap with that published solver is **~4–5 families out of ~30** (
 5. **The live writeup is corrected and current**, because that is what the judge reads.
 
 The writeup is editable until the deadline. The **code freezes first** (Nov 2), so any submission change
-must land before it; the paper can continue to Nov 9.
+must land before it; the paper can continue to Nov 8.
 
 ## 9. Decision rights
 

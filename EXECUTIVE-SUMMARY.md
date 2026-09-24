@@ -1,7 +1,7 @@
 # ARC Prize 2026 — Paper Track: Executive Summary
 
-> **Generated:** 2026-09-22 | **Deadline:** November 9, 2026 (48 days)
-> **Source:** [arcprize.org/competitions/2026/paper](https://arcprize.org/competitions/2026/paper)
+> **Generated:** 2026-09-22 | **Deadline:** November 8, 2026 (48 days)
+> **Source:** [arcprize.org/competitions/2026](https://arcprize.org/competitions/2026) → Key Dates. The rules page governs; Kaggle's platform `deadline` field shows Nov 9 and is superseded.
 
 ---
 
@@ -16,7 +16,7 @@
 | **Core challenge** | Pattern recognition + program synthesis | Scientific discovery + hypothesis testing |
 | **Data** | 1,000 train / 120 eval / 240 test tasks | 25 interactive environments |
 | **Code deadline** | Nov 2, 2026 | Nov 2, 2026 |
-| **Paper deadline** | Nov 9, 2026 | Nov 9, 2026 |
+| **Paper deadline** | Nov 8, 2026 | Nov 8, 2026 |
 
 ---
 
@@ -35,7 +35,7 @@ Mar 25, 2026  ─── Competition started
 Jun 30, 2026  ─── ARC-AGI-3 Milestone #1
 Sep 30, 2026  ─── ARC-AGI-3 Milestone #2
 Nov 02, 2026  ─── Code submissions due (ARC-AGI-2 & ARC-AGI-3)
-Nov 08, 2026  ─── Papers due ← CORRECTED from Kaggle (Nov 9 on Kaggle, Nov 8 on arcprize.org)
+Nov 08, 2026  ─── Papers due (rules page; Kaggle's platform field says Nov 9 and is superseded)
 Dec 04, 2026  ─── Results announced
 ```
 
@@ -294,4 +294,4 @@ arc-paper-track/
 3. **Literature review**: Read top papers from ARC Prize 2024/2025
 4. **Formulate your approach**: What's your unique angle?
 5. **Start the code submission**: You need working code on the leaderboard before Nov 2
-6. **Write the paper**: Due Nov 9 — start the structure early
+6. **Write the paper**: Due Nov 8 — start the structure early

@@ -30,7 +30,9 @@ Reconnaissance on 2026-09-23 established that:
    (`kaggle models instances list`) **silently hides every version except the latest** — which made a
    published v1 checkpoint look deleted. There was no documented, trustworthy place to check any of this.
 3. Hard constraints were unknown until measured: code freezes **2026-11-02**, the paper is due
-   **2026-11-09**, ARC-AGI-2/3 allow **1 submission/day**, and GPU quota is **30 h/week**.
+   **2026-11-08** (`https://arcprize.org/competitions/2026` → Key Dates; the rules page governs, and it
+   supersedes Kaggle's Nov 9 `deadline` field), ARC-AGI-2/3 allow **1 submission/day**, and GPU quota is
+   **30 h/week**.
 
 Without a written runbook each of these is rediscovered expensively, and the drift repeats.
 
@@ -50,7 +52,7 @@ Without a written runbook each of these is rediscovered expensively, and the dri
 | Auth | `/home/s/.kaggle/access_token`, `auth_method: ACCESS_TOKEN`, user `ser8147` | `kaggle config view` |
 | Kaggle CLI | 2.2.4 — no writeup commands | `kaggle --help` |
 | ARC-AGI-2 / ARC-AGI-3 code deadline | 2026-11-02 23:59 UTC | competition Timeline page |
-| Paper Track deadline | 2026-11-09 23:59 UTC | competition Timeline page |
+| Paper Track deadline | 2026-11-08 23:59 UTC | `https://arcprize.org/competitions/2026` → Key Dates (supersedes Kaggle's Nov 9 platform field) |
 | ARC-AGI-2 / ARC-AGI-3 submissions | 1 / day | `ApiGetCompetition.maxDailySubmissions` |
 | Paper Track submissions | 1 total (hackathon rule) | Competition-Specific Rule 2.2.a |
 | GPU quota | 30 h/week, 28.63 h remaining, refreshes 2026-09-26 | `kaggle quota` |

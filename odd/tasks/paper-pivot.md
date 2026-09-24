@@ -153,7 +153,7 @@ and a nondeterministic notebook's posted score is a rerun maximum.
 | Publishing "not wired into any submission" may read as an admission | could be scored down by a judge skimming for a working system | the honest framing is also the admissibility condition (`OBJECTIVE.md` §2) |
 | The ARC-AGI-2 reference may still be blocked by R8 | Accuracy on that track stays 0.00 | `arc2-reference` |
 | 1,500-word limit with three contributions plus citations | the writeup may have to drop detail | this feature |
-| Rewriting the whole narrative late | little time to iterate before 2026-11-09 | this feature |
+| Rewriting the whole narrative late | little time to iterate before 2026-11-08 | this feature |
 
 ## 10. Evidence log
 
