@@ -153,8 +153,8 @@ Also confirmed: the ARC-AGI-3 competition data ships the **entire upstream frame
 | T2 | Prove an end-to-end local episode: OFFLINE wrapper + our agent + scorer | done | `ar25`: 301 actions in 0.2 s; sweep of 25 games in 13.8 s |
 | T3 | Build a scoring wrapper that mirrors `play_local.py`'s loop but reports the official local score, in OFFLINE mode, with per-game budgets | in progress | brief sent; reference numbers to reproduce: mean 0.6084, 3/183 levels |
 | T3b | Analyse the human-replay dataset `jihangli1121/arc-agi-3-replays-v1` and try to turn it into a calibration benchmark | done | `docs/ARC3_REPLAYS_FINDINGS.md`; I re-ran and confirmed **24/25 replays reproduce** and the official scorer gives human play **89.6774/100** |
-| T7 | Make the agent's RNG reproducible | in progress | see §13 |
-| T8 | Promote the replay calibration into `experiments/` as a durable regression check | pending | delegated |
+| T7 | Make the agent's RNG reproducible | done | commit `9d39c09`; three default runs now identical, override honoured, invalid value raises |
+| T8 | Promote the replay calibration into `experiments/` as a durable regression check | done | `experiments/arc3_calibration.py` + reference; drift proof below |
 | T4 | Tests for scoring and aggregation | pending | test output |
 | T5 | Record `experiments/arc3_baseline.json` for v3 | pending | per-environment scores |
 | T6 | Independent verification | pending | verifier report |
@@ -297,3 +297,42 @@ of any action, with clicks **spatially concentrated** (the top 8 destinations ar
 our agent clicks `random.randint(0, 63)` across the whole grid. Humans also almost never undo
 (ACTION7 = 0.08%) and their play is strongly autocorrelated (`repPrev` 36-65%, `maxRun` up to 18) whereas
 our agent penalises repetition. Both are cheap things to test once measurement is trustworthy.
+
+## 15. T7/T8 verification, and one measurement error of my own
+
+**T7 verified.** Default seed, three consecutive runs: `0.8406` each time. `ARC3_AGENT_SEED=7` twice:
+`3.2056` both times; `=99`: `1.5279`. `=abc`: a per-game `ValueError`, not a silent fallback. That a bare
+seed change moves a six-game subset from `1.53` to `3.21` is further evidence the score was RNG-dominated
+rather than strategy-driven.
+
+**T8 verified, including the part that matters most - that it fails when it should.** The worker did not
+only assert the check passes; it perturbed the reference and showed the failure, which I re-ran myself:
+
+| Scenario | Exit | Observed |
+|---|---|---|
+| Normal check | 0 | `RESULT: pass` |
+| Perturbed reference | **1** | 3 named `DRIFT:` lines (reproduced count, aggregate, per-game) |
+| Dataset absent | 0 | `RESULT: skipped (dataset_absent)` |
+| `python3.14` without `arc_agi` | 0 | `RESULT: skipped (arc_agi_unavailable)`, no traceback |
+| `--env-dir` pointing at the tracked env dir | **2** | refused, engine never constructed, 0 tracebacks |
+
+That last row is the worker's own addition and the right instinct: the harness now **structurally refuses**
+to point the engine at `data/arc-agi-3/environment_files/`, the footgun from §3. A guard beats a warning.
+
+**A measurement error of mine, recorded because it is the same class of mistake the verifiers kept
+catching.** I first reported the safety refusal as "exit=0" because I read `$?` after piping through `tail`,
+so I captured `tail`'s status instead of the script's. Re-measured without a pipe it is exit 2 as documented.
+Checking the *right* thing matters as much as checking.
+
+## 16. The stray root `environment_files/`
+
+Resolved by ignore rather than deletion, because it is a runtime artefact and its contents differ from the
+tracked copy (25 game directories, 4.2 MB, downloaded 2026-09-23T18:30Z by a `NORMAL`-mode run):
+
+```gitignore
+/environment_files/    # root-anchored
+```
+
+The anchoring is deliberate. Unanchored `environment_files/` matches **at any depth**, so it would also
+ignore the tracked `data/arc-agi-3/environment_files/`. Verified with `git check-ignore`: unanchored gives
+`root->1 data->1`, anchored gives `root->1 data->0`.
