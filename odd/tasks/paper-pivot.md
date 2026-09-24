@@ -113,6 +113,7 @@ and a nondeterministic notebook's posted score is a rerun maximum.
 - `odd/OBJECTIVE.md`
 - `odd/tasks/paper-pivot.md`
 - `submissions/KAGGLE_WRITEUP.md`
+- `submissions/KAGGLE_WRITEUP.draft.md` (the P1 draft; new file, added 2026-09-24)
 - `paper/draft.md`
 - `models/kaggle_model_hub/model-metadata.json`
 - `models/laya_arc_finetuned_v2/laya_finetuned_typed_decisions/model-instance-metadata.json`
@@ -173,6 +174,21 @@ and a nondeterministic notebook's posted score is a rerun maximum.
   artifacts. Ours: 80.7% echo / 17.8% zero grids / 1.5% content out of 259 outputs. The reference's commit
   output: 238 of 259 = `[[0]]`. Both passed `problems: 0 / VERDICT PASS`. Two new correction rows added to
   §4 and P9 recorded for the dead `rot270` in the deployed v2.
+- 2026-09-24 — **P1 draft written, not published.** `submissions/KAGGLE_WRITEUP.draft.md`: **1,380 words**
+  (`wc -w`, limit 1,500), opening line marked as a P1 draft withheld from publication per §2. Structured as
+  a measurement report in the owner-decided order: what this is / the human-play instrument / the baseline
+  audit / the ablation / the thesis / our own negatives / cited-versus-ours / code and reproducibility. Every
+  numeric claim is one of §3a's, with the §4 corrections applied (no `+16.7%`, no `28% Solved`, no
+  `17.9%`; the ablation is a train/eval/deployed triple and never a bare 4.18%). The only number dropped
+  during drafting was a `1500+ fps` harness throughput figure, which §3a's evidence does not cover.
+  - **Provenance gap to close before publish.** Two of the draft's numbers are recorded only in this
+    feature doc's audit prose, not in a committed results file: the `--max-steps 80` / `--max-steps 500`
+    pair (`0.3175` with 1/183 levels, `0.4042` with 2/183, the `r11l` level score `2.17`) and the
+    `kaggle kernels output` artifact counts (`238/259` reference, `209`/`46`/`4` ours). Both are evidence
+    of record here; before the coordinated publish they should be written to a results file (or the writeup
+    should name this doc's §3a and §10 as their source) so `OBJECTIVE.md` §8.1 holds literally.
+  - P1 is **not** marked done: P7 verification is the parent's, and the §7 row for P1 still points at the
+    live writeup path, which was left untouched per the "do not mark P1 done" instruction.
 
 ## 11. P5, split — and the wording that nearly broke a kernel
 
