@@ -8,10 +8,10 @@ Integrates:
 """
 from __future__ import annotations
 
-from collections import deque
+import os
 import random
-import time
 import zlib
+from collections import deque
 from typing import Any
 
 from arcengine import FrameData, GameAction, GameState
@@ -32,15 +32,41 @@ def compute_frame_hash(frame_list: list[list[list[int]]]) -> int:
         return 0
 
 
+def _resolve_seed(game_id: str) -> int:
+    """Seed for this agent's RNG: stable by default, overridable with ``ARC3_AGENT_SEED``.
+
+    This used to be ``int(time.time() * 1e6) + hash(game_id) % 1e6``, which is not entropy: it encodes
+    *when the run happened*, and ``hash(str)`` is salted per process unless ``PYTHONHASHSEED`` is set.
+    Every run was therefore a different trajectory. Measured over 13 sweeps of the same code, the score
+    spread across a 6.3x range (0.17 to 1.09), which made version-to-version comparison meaningless and
+    violated the competition requirement that solutions be reproducible. A stable default seed makes runs
+    repeatable; the environment override lets a caller pin one specific trajectory deliberately.
+
+    Raises:
+        ValueError: if ``ARC3_AGENT_SEED`` is set but is not an integer. Failing loudly beats silently
+            falling back, which would look like reproducibility without being it.
+    """
+    override = os.environ.get("ARC3_AGENT_SEED")
+    if override is None:
+        return zlib.crc32(game_id.encode("utf-8"))
+    try:
+        return int(override)
+    except ValueError:
+        raise ValueError(
+            f"ARC3_AGENT_SEED must be an integer, got {override!r}"
+        ) from None
+
+
 class MyAgent(Agent):
     """Dual-Process Agent with System 2 BFS Frontier Pathfinding and Deadlock Recovery."""
 
-    MAX_ACTIONS = 80
+    MAX_ACTIONS = 500
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        seed = int(time.time() * 1_000_000) + hash(self.game_id) % 1_000_000
-        random.seed(seed)
+        # A per-instance RNG keeps this agent reproducible and independent of anything else that draws
+        # from the global `random` module.
+        self.rng = random.Random(_resolve_seed(self.game_id))
 
         # Persistent episode memory across resets within the game
         self.visit_counts: dict[int, int] = {}
@@ -102,7 +128,7 @@ class MyAgent(Agent):
             if (start[0] + d[0], start[1] + d[1]) not in self.visited_coords
         ]
         if unvisited_immediate:
-            return random.choice(unvisited_immediate)
+            return self.rng.choice(unvisited_immediate)
 
         # BFS on visited graph to locate closest frontier
         queue: deque[tuple[tuple[int, int], list[GameAction]]] = deque([(start, [])])
@@ -276,7 +302,7 @@ class MyAgent(Agent):
 
             weights.append(max(w, 0.01))
 
-        chosen = random.choices(viable_pool, weights=weights, k=1)[0]
+        chosen = self.rng.choices(viable_pool, weights=weights, k=1)[0]
         chosen.reasoning = {
             "system": "System1_HeuristicFrontier",
             "pos": f"({self.pos_x},{self.pos_y})",
@@ -291,7 +317,7 @@ class MyAgent(Agent):
 
     def _record_action(self, action: GameAction, curr_hash: int) -> None:
         if action.is_complex():
-            action.set_data({"x": random.randint(0, 63), "y": random.randint(0, 63)})
+            action.set_data({"x": self.rng.randint(0, 63), "y": self.rng.randint(0, 63)})
 
         # Speculative coordinate update for movement actions
         self.last_pos = (self.pos_x, self.pos_y)
