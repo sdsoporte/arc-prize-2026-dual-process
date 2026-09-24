@@ -103,8 +103,8 @@ section "4. Publish"
 if [ "$CREATE" -eq 1 ]; then
   require_kaggle
   if kaggle datasets status "$DATASET_SLUG" >/dev/null 2>&1; then
-    note "dataset exists -> creating a new version"
-    kaggle datasets version -p "$WORK" -m "laya ${LAYA_VERSION}" -u
+    note "dataset exists -> creating a new version (versions inherit visibility; `datasets version` has no -u)"
+    kaggle datasets version -p "$WORK" -m "laya ${LAYA_VERSION}"
   else
     note "creating the dataset (public)"
     kaggle datasets create -p "$WORK" -u
