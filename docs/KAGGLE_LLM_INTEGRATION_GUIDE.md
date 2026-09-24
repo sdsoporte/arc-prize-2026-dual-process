@@ -74,6 +74,11 @@ Add model references directly into your `kernel-metadata.json` so Kaggle pre-mou
 }
 ```
 
+`code_file` is resolved relative to the metadata file, not the repository root. The
+surviving ARC-AGI-2 submission kernel is
+`notebooks/arc2_submission_kernel/kaggle_arc2_submission.ipynb`; the former top-level
+duplicate `notebooks/kaggle_arc2_submission.ipynb` has been retired.
+
 ### 3.2 Finding Model Mount Paths
 
 When mounted, weights appear under:
