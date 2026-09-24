@@ -190,6 +190,11 @@ headroom as the evidence.
 **What must be corrected in the live writeup:** the three false numbers (§7), the code reference repointed to
 the ARC-AGI-3 kernel where we hold the **median** of 3,284 teams, and `paper/draft.md` §4.3 deleted.
 
+**Publishing is coordinated, not piecemeal.** The owner decided on 2026-09-24 that **no public artifact is
+edited until the writeup rewrite is drafted**, because a corrected model card would otherwise contradict the
+live writeup mid-flight — a second, self-inflicted Completeness failure. The writeup, the model card,
+`paper/draft.md` and the README change in one pass. Owned by `odd/tasks/paper-pivot.md`.
+
 ## 11. How this document is used
 
 This is the governing objective. Work is tracked under `odd/tasks/<feature>.md`, one feature per coherent
