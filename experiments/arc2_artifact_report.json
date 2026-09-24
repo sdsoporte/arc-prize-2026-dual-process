@@ -1,0 +1,31 @@
+{
+  "what": "A submission can be 80-98% non-informative and still pass the submission contract.",
+  "reproduce": [
+    "kaggle kernels output ser8147/arc2-reference-nvarc -p <dir>",
+    "kaggle kernels output ser8147/arc-laya-dual-process-submission -p <dir>",
+    "python3 - <script that buckets attempt_1/attempt_2 against the test inputs>"
+  ],
+  "reference_commit_submission": {
+    "total_outputs": 259,
+    "echo_input": 0,
+    "zero_grid": 238,
+    "other_content": 21,
+    "non_informative": 238,
+    "non_informative_pct": 91.9,
+    "tasks_with_other_content": 21,
+    "artifact_md5": "a1f0ad974b078004e6165b36b6088ee1",
+    "placeholder": "[[0]] (a 1x1 zero grid)"
+  },
+  "our_v2_submission": {
+    "total_outputs": 259,
+    "echo_input": 209,
+    "zero_grid": 46,
+    "other_content": 4,
+    "non_informative": 255,
+    "non_informative_pct": 98.5,
+    "tasks_with_other_content": 4,
+    "artifact_md5": "ea7a35e7b1fe84b9e028022f02ee191e"
+  },
+  "contract_verdict": "Both passed `problems: 0 / VERDICT PASS`. The format validates keys and shapes, not content.",
+  "caveat": "The reference's 91.9% is a BUDGET artifact (ARC_REFERENCE_COMMIT_BUDGET=1800 against the competition's 12 h); ours is a CAPABILITY artifact (it ran to completion on all 240 tasks in under a second and still produced 98.5% filler). The format cannot tell the two apart."
+}

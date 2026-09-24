@@ -1,0 +1,42 @@
+{
+  "what": "The ARC-AGI-3 metric is a 1-to-2-event statistic. Same code, same seed, two action budgets.",
+  "source_of_truth": "data/arc-agi-3-agents/.venv/lib/python3.12/site-packages/arc_agi/scorecard.py",
+  "mechanism": "EnvironmentScoreCalculator.add_level appends a hard 0.0 for every UNCOMPLETED level, and to_score divides sum(level_scores) by len(level_scores) -- the TOTAL level count. A game's score is therefore (a few small numbers) / (its total level count), then averaged over games.",
+  "seed": 16,
+  "reproduce": [
+    "ARC3_AGENT_SEED=16 data/arc-agi-3-agents/.venv/bin/python experiments/arc3_local_eval.py --max-steps 80  --json experiments/arc3_metric_ms80.json",
+    "ARC3_AGENT_SEED=16 data/arc-agi-3-agents/.venv/bin/python experiments/arc3_local_eval.py --max-steps 500 --json experiments/arc3_metric_ms500.json"
+  ],
+  "runs": {
+    "max_steps_80": {
+      "mean_score": 0.31746,
+      "levels_completed": 1,
+      "levels_available": 183,
+      "games_with_nonzero_score": {
+        "m0r0": 7.936508
+      }
+    },
+    "max_steps_500": {
+      "mean_score": 0.404245,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_with_nonzero_score": {
+        "m0r0": 7.936508,
+        "r11l": 2.169625
+      }
+    }
+  },
+  "identity": {
+    "mean_500_minus_mean_80": 0.086785,
+    "times_25_games": 2.169625,
+    "r11l_level_score": 2.169625,
+    "closes_exactly": true,
+    "note": "The entire difference between the two configurations is one level cleared in one game (r11l)."
+  },
+  "leaderboard_context": {
+    "deployed_local": 0.4042,
+    "deployed_leaderboard": 0.02,
+    "best_posted": 0.28,
+    "caveat": "The leaderboard is computed on approximately 50% of the test data, so a public half containing none of the 1-2 cleared levels scores ~0."
+  }
+}

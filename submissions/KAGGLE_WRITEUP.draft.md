@@ -53,7 +53,7 @@ This is a **train** result and must be read as one. The honest triple is **train
 
 The official scorer is a ratio with a fixed denominator. In `arc_agi/scorecard.py`, `EnvironmentScoreCalculator.add_level` appends a hard **0.0** for every uncompleted level, and `to_score` divides by `len(level_scores)` — the **total** level count. A game's score is (a few small numbers) / (its total level count), then averaged over games.
 
-Two measured runs of the same code with the same seed, differing only in `--max-steps`, show what that does:
+Two measured runs of the same code with the same seed, differing only in `--max-steps`, show what that does (`experiments/arc3_metric_report.json`):
 
 | run | mean score | levels cleared |
 |---|---|---|
@@ -66,7 +66,7 @@ Our deployed ARC-AGI-3 run measured **0.4042** locally and scored **0.02** on th
 
 The same agent can be reported at 0.3175 or 0.4042 with no change in its reasoning, only in how many steps it was allowed. Scores at this scale are near-binary event statistics rendered as floats.
 
-The validator cannot see any of it. Measured on the actual submitted artifacts via `kaggle kernels output`:
+The validator cannot see any of it. Measured on the actual submitted artifacts via `kaggle kernels output`, and re-derived into `experiments/arc2_artifact_report.json`:
 
 | artifact | non-informative outputs | with content |
 |---|---|---|
@@ -97,4 +97,4 @@ Any score we quote carries two caveats: the leaderboard uses ~50% of the test da
 
 ## 8. Code and reproducibility
 
-Everything runs offline, with no network access and no third-party APIs. The instruments are `experiments/arc3_calibration.py`, `experiments/arc3_local_eval.py` and `experiments/arc2_ablation.py`; their recorded outputs are `experiments/arc3_calibration_reference.json`, `experiments/arc3_baseline.json`, `experiments/arc2_baseline.json` and `experiments/arc2_ablation_results.json`; the audit is `docs/ARC3_REPLAYS_FINDINGS.md`. MIT / CC0.
+Everything runs offline, with no network access and no third-party APIs. The instruments are `experiments/arc3_calibration.py`, `experiments/arc3_local_eval.py` and `experiments/arc2_ablation.py`; their recorded outputs are `experiments/arc3_calibration_reference.json`, `experiments/arc3_baseline.json`, `experiments/arc2_baseline.json` and `experiments/arc2_ablation_results.json`; the audit is `docs/ARC3_REPLAYS_FINDINGS.md`. **The thesis section's core measurement ships as its own reproducible record**: `experiments/arc3_metric_report.json` carries the two `--max-steps` runs, the arithmetic identity, the scorer mechanism and the exact commands, with the raw per-game reports beside it in `experiments/arc3_metric_ms80.json` and `experiments/arc3_metric_ms500.json`. The validator evidence is `experiments/arc2_artifact_report.json`, which records each artifact's md5 alongside its bucket counts. MIT / CC0.
