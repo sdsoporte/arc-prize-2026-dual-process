@@ -1,0 +1,599 @@
+{
+  "schema": "arc3-strategy-probe/1",
+  "generated_at": "2026-09-24T02:06:08Z",
+  "operation_mode": "OFFLINE",
+  "interpreter": "/home/s/dev/projects/kaggle/arc-paper-track/data/arc-agi-3-agents/.venv/bin/python",
+  "agent_module": "src/arc3_spatial_memory_agent.py",
+  "environments_dir": "/tmp/arc3-env",
+  "seeds": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+  ],
+  "arms": [
+    "baseline",
+    "click_local",
+    "click_reuse",
+    "click_weight",
+    "no_rep_penalty"
+  ],
+  "arm_descriptions": {
+    "baseline": "the unmodified MyAgent",
+    "click_local": "ACTION6 targets near the agent's tracked (pos_x, pos_y), clamped to 0..63",
+    "click_reuse": "ACTION6 mostly re-uses coordinates already clicked, explores a new one otherwise",
+    "click_weight": "CLICK_WEIGHT = 1.5 (default 0.5)",
+    "no_rep_penalty": "REPEAT_PENALTY = 1.0 (default 0.1, i.e. no repetition penalty)"
+  },
+  "verbose": false,
+  "wall_time_s": 353.202,
+  "per_arm": {
+    "baseline": {
+      "description": "the unmodified MyAgent",
+      "per_seed_scores": {
+        "1": 0.338983,
+        "2": 0.406315,
+        "3": 0.226856,
+        "4": 0.598039,
+        "5": 0.398214,
+        "6": 0.136686
+      },
+      "mean_score": 0.350849,
+      "total_levels_completed": 15,
+      "total_levels_available": 1098
+    },
+    "click_local": {
+      "description": "ACTION6 targets near the agent's tracked (pos_x, pos_y), clamped to 0..63",
+      "per_seed_scores": {
+        "1": 0.338983,
+        "2": 0.303028,
+        "3": 0.226856,
+        "4": 0.598039,
+        "5": 0.398214,
+        "6": 0.097575
+      },
+      "mean_score": 0.327116,
+      "total_levels_completed": 13,
+      "total_levels_available": 1098
+    },
+    "click_reuse": {
+      "description": "ACTION6 mostly re-uses coordinates already clicked, explores a new one otherwise",
+      "per_seed_scores": {
+        "1": 0.425768,
+        "2": 0.362469,
+        "3": 0.834321,
+        "4": 0.964706,
+        "5": 0.398214,
+        "6": 0.097575
+      },
+      "mean_score": 0.513842,
+      "total_levels_completed": 18,
+      "total_levels_available": 1098
+    },
+    "click_weight": {
+      "description": "CLICK_WEIGHT = 1.5 (default 0.5)",
+      "per_seed_scores": {
+        "1": 0.338983,
+        "2": 0.406315,
+        "3": 0.226856,
+        "4": 0.598039,
+        "5": 0.398214,
+        "6": 0.136686
+      },
+      "mean_score": 0.350849,
+      "total_levels_completed": 15,
+      "total_levels_available": 1098
+    },
+    "no_rep_penalty": {
+      "description": "REPEAT_PENALTY = 1.0 (default 0.1, i.e. no repetition penalty)",
+      "per_seed_scores": {
+        "1": 0.338983,
+        "2": 0.406315,
+        "3": 0.226856,
+        "4": 0.598039,
+        "5": 0.398214,
+        "6": 0.136686
+      },
+      "mean_score": 0.350849,
+      "total_levels_completed": 15,
+      "total_levels_available": 1098
+    }
+  },
+  "deltas": {
+    "click_local": {
+      "per_seed": {
+        "1": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "2": {
+          "delta": -0.103287,
+          "reason": null
+        },
+        "3": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "4": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "5": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "6": {
+          "delta": -0.039111,
+          "reason": null
+        }
+      },
+      "n": 6,
+      "positive": 0,
+      "negative": 2,
+      "zero": 4,
+      "mean": -0.023733,
+      "median": 0.0,
+      "min": -0.103287,
+      "max": 0.0
+    },
+    "click_reuse": {
+      "per_seed": {
+        "1": {
+          "delta": 0.086785,
+          "reason": null
+        },
+        "2": {
+          "delta": -0.043846,
+          "reason": null
+        },
+        "3": {
+          "delta": 0.607465,
+          "reason": null
+        },
+        "4": {
+          "delta": 0.366667,
+          "reason": null
+        },
+        "5": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "6": {
+          "delta": -0.039111,
+          "reason": null
+        }
+      },
+      "n": 6,
+      "positive": 3,
+      "negative": 2,
+      "zero": 1,
+      "mean": 0.162993,
+      "median": 0.043393,
+      "min": -0.043846,
+      "max": 0.607465
+    },
+    "click_weight": {
+      "per_seed": {
+        "1": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "2": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "3": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "4": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "5": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "6": {
+          "delta": 0.0,
+          "reason": null
+        }
+      },
+      "n": 6,
+      "positive": 0,
+      "negative": 0,
+      "zero": 6,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    },
+    "no_rep_penalty": {
+      "per_seed": {
+        "1": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "2": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "3": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "4": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "5": {
+          "delta": 0.0,
+          "reason": null
+        },
+        "6": {
+          "delta": 0.0,
+          "reason": null
+        }
+      },
+      "n": 6,
+      "positive": 0,
+      "negative": 0,
+      "zero": 6,
+      "mean": 0.0,
+      "median": 0.0,
+      "min": 0.0,
+      "max": 0.0
+    }
+  },
+  "seed_noise": {
+    "min": 0.136686,
+    "max": 0.598039,
+    "range": 0.461353,
+    "mean": 0.350849,
+    "stdev": 0.145947
+  },
+  "assessment": {
+    "threshold_stdev": 0.145947,
+    "per_arm": {
+      "click_local": "not distinguishable from seed noise",
+      "click_reuse": "not distinguishable from seed noise",
+      "click_weight": "not distinguishable from seed noise",
+      "no_rep_penalty": "not distinguishable from seed noise"
+    },
+    "overall": "No arm's paired delta is distinguishable from seed noise at this sample size (baseline seed-to-seed stdev 0.1459). This is a null result, and an honest one."
+  },
+  "runs": [
+    {
+      "arm": "baseline",
+      "seed": 1,
+      "score": 0.338983,
+      "levels_completed": 1,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.886,
+      "error": null
+    },
+    {
+      "arm": "baseline",
+      "seed": 2,
+      "score": 0.406315,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.787,
+      "error": null
+    },
+    {
+      "arm": "baseline",
+      "seed": 3,
+      "score": 0.226856,
+      "levels_completed": 4,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.829,
+      "error": null
+    },
+    {
+      "arm": "baseline",
+      "seed": 4,
+      "score": 0.598039,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.694,
+      "error": null
+    },
+    {
+      "arm": "baseline",
+      "seed": 5,
+      "score": 0.398214,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 13.257,
+      "error": null
+    },
+    {
+      "arm": "baseline",
+      "seed": 6,
+      "score": 0.136686,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.592,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 1,
+      "score": 0.338983,
+      "levels_completed": 1,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.876,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 2,
+      "score": 0.303028,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.429,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 3,
+      "score": 0.226856,
+      "levels_completed": 4,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.508,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 4,
+      "score": 0.598039,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 9.917,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 5,
+      "score": 0.398214,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 9.535,
+      "error": null
+    },
+    {
+      "arm": "click_local",
+      "seed": 6,
+      "score": 0.097575,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 9.565,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 1,
+      "score": 0.425768,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 10.61,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 2,
+      "score": 0.362469,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.235,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 3,
+      "score": 0.834321,
+      "levels_completed": 6,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.067,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 4,
+      "score": 0.964706,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.951,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 5,
+      "score": 0.398214,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.072,
+      "error": null
+    },
+    {
+      "arm": "click_reuse",
+      "seed": 6,
+      "score": 0.097575,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.577,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 1,
+      "score": 0.338983,
+      "levels_completed": 1,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 10.927,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 2,
+      "score": 0.406315,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.93,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 3,
+      "score": 0.226856,
+      "levels_completed": 4,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.021,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 4,
+      "score": 0.598039,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 13.333,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 5,
+      "score": 0.398214,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.427,
+      "error": null
+    },
+    {
+      "arm": "click_weight",
+      "seed": 6,
+      "score": 0.136686,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.953,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 1,
+      "score": 0.338983,
+      "levels_completed": 1,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 12.26,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 2,
+      "score": 0.406315,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 13.08,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 3,
+      "score": 0.226856,
+      "levels_completed": 4,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 10.97,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 4,
+      "score": 0.598039,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.159,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 5,
+      "score": 0.398214,
+      "levels_completed": 2,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.079,
+      "error": null
+    },
+    {
+      "arm": "no_rep_penalty",
+      "seed": 6,
+      "score": 0.136686,
+      "levels_completed": 3,
+      "levels_available": 183,
+      "games_errored": 0,
+      "failed_games": [],
+      "wall_time_s": 11.666,
+      "error": null
+    }
+  ]
+}
