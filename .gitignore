@@ -45,3 +45,7 @@ scratch/
 .DS_Store
 .idea/
 .vscode/
+# Local Pi runtime state
+.atl/
+
+/environment_files/
