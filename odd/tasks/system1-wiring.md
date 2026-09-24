@@ -85,7 +85,7 @@ the single daily submission is spent.**
 | # | Task | Status | Evidence |
 |---|---|---|---|
 | T1 | Write the governing objective and scaffold this feature | done | `odd/OBJECTIVE.md`; this file |
-| T2 | Publish the `laya` wheel as a Kaggle dataset (offline install source) | pending | dataset ref + `kaggle datasets files` |
+| T2 | Publish the `laya` wheel as a Kaggle dataset (offline install source) | done | `ser8147/laya-wheel`, **public**, `ready`; reproducible via `scripts/kaggle/laya_wheel_dataset.sh` |
 | T3 | Add a **ranker seam** to the ARC-2 solver and an offline evaluation harness | pending | `experiments/arc2_ranker_eval.py` output |
 | T4 | **The decision gate**: measure whether the ranker puts the correct candidate in the top 2 | pending | top-2 hit rate vs the no-ranker baseline |
 | T5 | Fix the artifact wiring: pin the HF revision, drop the spurious dataset edge, add `model_sources`, link the HuggingFace repo, retire/document the legacy lineage | pending | wiring audit + kernel metadata |
@@ -133,8 +133,22 @@ report: top-2 hit rate  WITH ranker  vs  WITHOUT ranker (candidate order as buil
 
 ## 10. Evidence log
 
-- 2026-09-24 — created. `main` == `origin/main` == `bf576e2`; this branch stacks 10 commits of prior
+- 2026-09-24 — created. `main` == `origin/main` == `bf576e2`; this branch stacks 11 commits of prior
   verified work (`feat/arc3-eval-harness`, `feat/arc3-strategy-probe`) that are not yet on `main`.
+- 2026-09-24 — **T2 done.** `ser8147/laya-wheel` published **public**, status `ready`, containing
+  `laya-0.3.11-py3-none-any.whl` (106,531 bytes) and a provenance README. Verified by public search
+  (`kaggle datasets list -s "laya wheel"` returns it), not just by the owner-scoped listing.
+  - The wheel's **required** deps (`torch>=2.0.0`, `transformers>=4.48.0`, `safetensors>=0.4.0`,
+    `huggingface_hub>=0.20.0`, `numpy>=1.20.0`) are all present in the Kaggle Python image, so
+    `pip install --no-index` resolves them locally. Everything else sits behind optional extras
+    (`serve`, `fast`, `mcp`, `onnx`, `langchain`, `langgraph`) and is not needed for inference.
+  - **`kaggle datasets create` defaults to PRIVATE**; the public flag is `-u/--public`. The first attempt
+    was private and had to be deleted and recreated.
+  - The dataset carries the **upstream Apache-2.0 licence**, not the CLI's CC0 default, because it
+    redistributes someone else's work. SHA-256 `1ee717dd05a742135869383af9b66b20e...` is pinned in the
+    script, so a new upstream release is reviewed rather than silently absorbed.
+  - `scripts/kaggle/laya_wheel_dataset.sh` is the recipe: fetch, verify the hash, assemble, and publish
+    only with an explicit `--create` (dry run by default, verified exit 0 and nothing uploaded).
 - 2026-09-24 — wiring audit findings that motivate the feature: `model_sources: []` on all six kernels; the
   ARC-2 kernel declares `ser8147/arc-laya-finetune-data` and **never reads it** (its only `/kaggle/input`
   access is the competition's own test challenges); the training kernel calls
