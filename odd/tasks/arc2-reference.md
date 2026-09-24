@@ -168,13 +168,15 @@ excludes, so the downgrade is forced rather than cosmetic. Two more downgrades a
 
 ### What the unblock exposed: CUDA OOM at 21.65 / 22.03 GiB
 
-The three runs moved the kernel from "cannot start" to "runs, then runs out of GPU memory":
+The four runs moved the kernel from "cannot start" to "runs, then runs out of GPU memory", to a
+bounded, clean completion:
 
 | run | kernel version | terminal | what happened |
 | --- | --- | --- | --- |
 | 1 | v1 | ERROR after 31 s | pre-existing run; stopped on the preflight's own `unsloth` gate |
 | 2 | v2 | ERROR after ~2 min | wheelhouse installed successfully (30-wheel cut), stopped on an over-strict pin assert: `torchvision pinned to 0.25.0 but installed 0.25.0+cu128` — the image's own CUDA build, i.e. a false alarm, since fixed |
-| 3 | v3 | ERROR after ~11 min | install 34 s, gate passed, solver started, 240 tasks queued, **10 tasks solved**, then CUDA OOM |
+| 3 | v3 | ERROR after ~11 min | install 34 s, gate passed, solver started, 240 tasks queued, **8 recorded task completions** (the "10 tasks solved" recorded at the time is not reproducible from the v3 log — 8 `finished` records), then CUDA OOM |
+| 4 | v4 | **`COMPLETE`** after ~37 min | R8 applied (`use_gradient_checkpointing=True`). Install 34 s, `OFFLINE INSTALL OK in 96s`, 240 tasks queued, **24 tasks completed**, **no OOM**, `starter.py exit code 0 after 1788s`, submission-contract check **PASS** (21/240 tasks decoded). Measured in the R8 section below |
 
 Run 3's fatal error, from one rank of `arc_solver.py`:
 
@@ -203,6 +205,116 @@ shrink.
 **Planning consequence:** a full competition rerun walks the same 240-task path on the same machine, so the
 dependency blocker is behind us but a **memory blocker now stands in front of a submission**.
 
+**Correction to the previous extrapolation (2026-09-24).** The row above claiming that 240 tasks "cannot
+finish in the upstream budget at that rate" was wrong on its own numbers: 10 tasks in 456 s is 45.6 s/task,
+and 240 tasks at that rate is **~3.0 h**, which fits the 12 h budget with room to spare. (The "10 tasks" is
+itself not reproducible — the v3 log holds 8 `finished` records — but the arithmetic point stands.) The counter-argument
+is that the 10 completed tasks may be the fastest ones, so the rate over a long run is not known from run 3.
+Both readings are plausible and **neither is measured**; the measurement is the point of R8's run below.
+
+### R8 decision — one declared deviation: gradient checkpointing ON
+
+**`use_gradient_checkpointing` is `True`, not upstream's `False`** — the only upstream logic change this
+notebook makes, applied at both declaration sites: the `FastLanguageModel.from_pretrained` call and the
+`peft_params` dict passed to `FastLanguageModel.get_peft_model` (the later call, which would otherwise
+re-disable what the first enables). It is a pure memory-for-compute trade: the model sees exactly the same
+data, the same sequence length (`max_seq_length=8192`) and the same 128 task-time training augmentations.
+That is why it was chosen over the alternatives — `max_seq_length` would truncate the input, and reducing
+the augmentation count would change how candidates are scored.
+
+**Consequence, recorded rather than hidden: this notebook is no longer an unmodified reference.** The
+deviation is declared in the notebook's own first cell under "The one declared deviation from the
+reference", so the artifact carries its own caveat. `gradient_checkpointing=False` in `train_args` is a
+*different* `TrainingArguments` flag and is deliberately left at its upstream value.
+
+Cost expectation: gradient checkpointing typically costs 20-30% of throughput, so the post-change
+seconds/task is the rate that matters; the pre-change 45.6 s/task figure is not the number to extrapolate.
+
+### R8 measurement — one bounded commit run, kernel v4, terminal `COMPLETE`
+
+Run 4 = kernel **v4**, `ARC_REFERENCE_COMMIT_BUDGET=1800` (commit-mode default raised from 1500), the real
+240-task test set, **one run, no retries**. Pushed 2026-09-24 06:43:12Z, terminal `COMPLETE` 07:20:38Z
+(~37 min of wall clock, the 1800 s budget spent inside it).
+
+**The OOM did not recur.** Zero `OutOfMemoryError` records in 2 157 log entries. Memory, from the kernel's
+own `torch.cuda.max_memory_allocated()` prints (`reset_peak_memory_stats()` before each phase):
+
+| phase | v3 (GC off) | v4 (GC on) |
+| --- | --- | --- |
+| training peak, per rank | 13.1-18.7 GiB (max 18 686 MB) | **12.8 GiB, flat: 13 123/13 124 MB on all 4 ranks and every task** |
+| inference peak, per rank | max 12 049 MB | max 17 201 MB (code path unchanged by this deviation) |
+
+The training peak collapsing to a task-independent constant is the signature checkpointing should produce
+(activations freed and recomputed), and it leaves roughly 9 GiB of headroom where run 3 died at 21.65 GiB
+in `apply_lora_mlp_swiglu` -> `matmul_lora`.
+
+**Throughput.** **24 tasks completed** (24 unique task ids, all from the first 24 ids of the sorted 240-task
+queue) inside a parallel window of **1 688.4 s** — each rank's first completion minus its own printed
+elapsed puts all four task loops at ~253 s of log time, and the last completion is at 1 941.7 s. That is
+**70.4 s per task of 4-rank wall clock**, or **279.1 s of rank time per task**. Per-task seconds in
+completion order, so the tail is visible:
+
+| rank | per-task seconds (completion order) |
+| --- | --- |
+| 0 | 334.4, 776.5, 136.9, 168.6, 251.5 |
+| 1 | 98.6, 272.9, 107.6, 502.7, 318.6, 368.1 |
+| 2 | 349.7, 72.3, 1109.2, 157.8 |
+| 3 | 122.1, 83.7, 110.0, 151.9, 127.9, 101.7, 567.1, 134.9, 274.6 |
+
+mean **279.1 s**, median **163.2 s**, min 72.3 s, max **1 109.2 s** — the mean is 1.7x the median, so the
+distribution is heavy-tailed and the tail is the whole question.
+
+**What checkpointing cost, measured on identical tasks.** Eight tasks ran in both v3 and v4, so the ratio is
+not confounded by task choice: `00576224` 84.8 -> 98.6, `007bbfb7` 104.6 -> 122.1, `017c7c7b` 70.4 -> 83.7,
+`025d127b` 96.2 -> 110.0, `00d62c1b` 291.8 -> 334.4, `009d5c81` 272.1 -> 349.7, `00dbd492` 248.9 -> 272.9,
+`0520fde7` 59.3 -> 72.3 — **mean ratio x1.176 (+17.6%)**, at the low end of the quoted 20-30%. It is a
+constant per-task cost, not a degradation over the run.
+
+**Extrapolation to 240 tasks.** 240 x 70.4 s = **16 884 s = 4.69 h** of 4-rank wall clock, against the
+upstream `12 h - 10 min` budget — it fits, with ~2.5x headroom. Sensitivity, stated because 24 tasks is a
+small sample: at the second half's mean per-task time (397.2 s of rank time) it is **6.6 h** (still fits);
+at the single worst observed task (1 109.2 s) it is 18.5 h (would not fit). Conclusion: **fits, with the tail
+as the only threat** — not "fits comfortably".
+
+**Rate stability.** Completions per 400 s window over the 1 688 s run: **7, 5, 2, 6**, then 4 in the final
+88 s. Bursty, not degrading: the slow window (1 053-1 453 s) is exactly where the 1 109 s / 776 s / 567 s
+tasks overlap, and the run's last segment is its fastest. The second half's mean per-task time (397.2 s) is
+2.5x the first half's (161.1 s), which tracks task difficulty rather than any pipeline slowdown. With 24 of
+240 tasks measured, the remaining 216 are an unmeasured population.
+
+**The previous claim was wrong, and so was its counter-argument.** "240 tasks cannot finish in the upstream
+budget" was never measured, and the 45.6 s/task it rested on is not a rate: it divides *starter.py's whole
+wall time* (which includes ~130 s of model load and the rank stagger) by tasks. The comparable measured
+aggregate for v3's own window is 391.5 s / 8 recorded completions = 48.9 s/task — and those 8 are the
+fastest tasks in the set. Neither number is the post-change rate; 70.4 s/task (wall) and 279.1 s/task (rank
+time) are.
+
+**The submission-contract check was reached, and passed** — v3 never got there, so this requirement was
+"unverified", and it is now verified:
+
+```text
+test task ids                : 240
+test outputs (task x input)  : 259
+tasks with decoded results   : 21/240
+decoded candidate outputs    : 355
+outputs with a non-placeholder attempt : 21
+problems                     : 0
+VERDICT                      : PASS
+```
+
+`starter.py exit code 0 after 1788s` (v3: exit 1 after 456 s), so the fail-loud runner let the notebook
+through to the submission cell. The 3-task gap between 24 completions and 21 decoded tasks is work still in
+flight when the budget expired.
+
+**Not directly logged, stated as an inference:** no unsloth or HF line says "gradient checkpointing
+enabled". That GC was active rests on three independent observations — the flat training peak, the +17.6%
+per-task cost on identical tasks, and the absence of the 21.65 GiB allocation that killed run 3 in the same
+code path.
+
+**Quota.** `kaggle quota` moved **1.78 h -> 2.87 h used** (remaining 28.22 h -> 27.13 h) for 37 min of wall
+clock: this shape bills ~1.7-2x wall clock (run 3: ~11 min wall -> +0.39 h). The "~0.5 h" authorization was
+a wall-clock estimate; the actual cost was ~1.1 h, visible only after the run.
+
 ## 5. Non-goals
 
 - Does not claim novelty for a fork, and does not hide that it is one.
@@ -225,9 +337,9 @@ dependency blocker is behind us but a **memory blocker now stands in front of a 
 | R1 | Scaffold this feature and update the governing objective | in progress | `odd/OBJECTIVE.md` revised; this file |
 | R2 | Land the ablation as a repo tool (`experiments/arc2_ablation.py`) | done | reproduces COMPLETE 45/43/42, `panel` −11, `scale` −5, `collinear` −4, and six families at exactly 0; also reports zero raising candidates |
 | R3 | Adapt the reference pipeline to run **offline**: `model_sources` for the base model, a declared wheel source for the packages the image omits, `enable_internet: False` | **done** | Adaptation is complete: `model_sources` resolves offline, the wheelhouse installs, and the pipeline starts. See R7 and §4 |
-| R4 | Push and verify in commit mode (free — does not consume a submission) | partial | v3 → terminal `ERROR` after ~11 min. The install is proven (`pip exit code 0` in 34 s, 15/15 pins in effect, every import true) and the solver ran **10 tasks** on 4 ranks before a CUDA OOM at 21.65/22.03 GiB. No submission spent |
+| R4 | Push and verify in commit mode (free — does not consume a submission) | **done (bounded)** | **v4 → terminal `COMPLETE`.** Install 34 s, gate passed, 240 tasks queued, **24 tasks completed on 4 ranks, no OOM**, `starter.py exit code 0 after 1788s`, and the submission-contract check ran and reported `problems: 0 / VERDICT: PASS` with 21/240 tasks decoded. The bounded budget (1 800 s) is what stopped it, not a failure — the full 240-task rerun is still unmeasured. No submission spent |
 | R7 | Supply the missing dependencies offline as a declared `dataset_sources` wheel source, then re-run the gate | **done** | `ser8147/arc2-unsloth-wheelhouse` — public, 15 wheels, 191.6 MiB, SHA-256 manifest, per-package licence table, dependency-closure check; built by `scripts/kaggle/unsloth_wheelhouse.sh`. Before/after table in §4 |
-| R8 | *(new)* Resolve the per-rank CUDA OOM before any submission | proposed | Needs an owner decision. The levers are upstream memory hyperparameters (`use_gradient_checkpointing`, `max_seq_length`, augmentation count), and changing them ends this notebook's claim to be an unmodified reference. `expandable_segments` cannot help (only 66.8 MiB was reserved-but-unallocated). See §4 |
+| R8 | Resolve the per-rank CUDA OOM before any submission | **done (bounded)** | Owner decision 2026-09-24: `use_gradient_checkpointing` `False` -> `True`, one parameter, at both declaration sites; nothing else. Declared as the notebook's one deviation from the reference (§4, and the notebook's own first cell). Verified in v4: **no OOM**, training peak flat at 12.8 GiB per rank (was 13.1-18.7 GiB), +17.6% per-task cost on 8 identical tasks, 24 tasks completed, contract check PASS. Full details and per-task times in §4 |
 | R5 | Spend **one** submission and record the score, with the 50%-of-test-data caveat | pending | leaderboard |
 | R6 | Independent verification | pending | verifier report |
 
@@ -248,14 +360,39 @@ dependency blocker is behind us but a **memory blocker now stands in front of a 
 |---|---|---|
 | ~~The fork's dependencies (`unsloth`, `transformers` versions) may not exist in the offline image~~ **FIRED 2026-09-24, RESOLVED 2026-09-24** | The rerun could not start. Resolved by `ser8147/arc2-unsloth-wheelhouse`; cost of the whole session 0.39 h of quota, no submission spent | this feature — R7 |
 | ~~The package supplying `unsloth` also needs a `transformers < 5` downgrade to match the API surface the pipeline uses~~ **FIRED and handled** | Confirmed: the image ships exactly `transformers` 5.0.0, which unsloth excludes. `transformers` 4.57.6, `huggingface_hub` 0.36.2 and `dill` 0.4.0 are all downgrades, not choices | R7 |
-| **NEW: a full competition rerun runs the same 240-task path and now hits CUDA OOM at 21.65/22.03 GiB per rank** | A submission spent on the current configuration is likely to burn a rerun or produce a partial artifact. Needs an owner decision before R5 | this feature — R8 |
-| Per-task LoRA TTT costs real GPU hours | Quota pressure (28.22 h/week after this session) | this feature |
-| 12 h runtime cap | 10 tasks took ~7.6 min of a 25 min bounded budget; a full 240-task rerun cannot finish in the upstream budget at that rate | measured in run 3 |
+| ~~**NEW: a full competition rerun runs the same 240-task path and now hits CUDA OOM at 21.65/22.03 GiB per rank**~~ **FIRED 2026-09-24, RESOLVED 2026-09-24 by R8** | A submission spent on the old configuration would have burned a rerun or produced a partial artifact. With `use_gradient_checkpointing=True` the training peak is flat at 12.8 GiB per rank and 24 tasks ran without OOM | this feature — R8 |
+| Per-task LoRA TTT costs real GPU hours | Quota pressure (28.22 h -> 27.13 h remaining after the R8 run, which billed ~1.1 h for 37 min of wall clock) | this feature |
+| ~~12 h runtime cap: "a full 240-task rerun cannot finish in the upstream budget at that rate"~~ **CORRECTED AND MEASURED 2026-09-24** | The v3 claim was never measured and its 45.6 s/task divisor was invalid. Measured post-change rate: **70.4 s/task of 4-rank wall clock → 240 tasks = 4.69 h**, fitting the upstream `12 h - 10 min` budget with ~2.5x headroom. Sensitivity: 6.6 h at the second half's mean, 18.5 h at the worst single task measured — so the heavy tail, not the mean, is the real exposure, and 216 of 240 tasks remain unmeasured | measured in run 4 (§4) |
+| **Inference peak is now the binding memory constraint, and R8 did not touch it** | Per-rank inference peak reached 17 201 MB of 22.03 GiB in v4 (v3 max 12 049 MB) — only ~5 GiB of headroom, on a phase GC does not cover. Larger test grids in the unmeasured 216 tasks could still OOM the inference path | this feature — R5 |
+| **The bounded run is not the competition run** | 24 of 240 tasks measured; `global_end_time` bounds a commit run to 1800 s by our own edit, while a rerun uses the upstream `12 h - 10 min`. The 240-task path end to end is still unexercised on this machine | this feature — R5 |
 | The score lands anywhere in the field's 28–34 band | No distinction, and it is nondeterministic | stated in the paper |
 | A fork declared honestly can still be read as padding | Reviewer perception | the paper keeps it to one comparison row |
 
 ## 10. Evidence log
 
+- 2026-09-24 — **R8 applied and measured: the OOM is gone and the run completes.** One declared
+  adaptation: `use_gradient_checkpointing` `False` -> `True` at both declaration sites (the
+  `FastLanguageModel.from_pretrained` call and the `peft_params` dict passed to
+  `FastLanguageModel.get_peft_model`), nothing else — a pure memory-for-compute trade that changes no input.
+  It **ends this notebook's claim to be an unmodified reference**, declared in the notebook's own first cell
+  ("The one declared deviation from the reference") and in §4 here. Commit-mode run **v4** with
+  `ARC_REFERENCE_COMMIT_BUDGET=1800` (the commit-mode default raised from 1500 in that same cell) on the real
+  240-task set: terminal **`COMPLETE`**, pushed 06:43:12Z -> complete 07:20:38Z (~37 min wall), `pip exit
+  code 0 in 34 s`, `OFFLINE INSTALL OK in 96s`, 240 tasks queued, **24 tasks completed**, **zero
+  `OutOfMemoryError` records** in 2 157 log entries, and `starter.py exit code 0 after 1788s` (v3: exit 1
+  after 456 s). The **submission-contract check ran and passed**: `problems: 0`, `VERDICT: PASS`, 240 test
+  ids, 259 outputs, 21/240 tasks decoded, 355 candidate outputs — the requirement v3 never reached.
+  `torch.cuda.max_memory_allocated()` peaks: training **13 123/13 124 MB on every rank and every task**
+  (v3: 13.1-18.7 GiB, and a fatal 21.65 GiB allocation), inference up to **17 201 MB** (v3: 12 049 MB) — GC
+  does not cover inference, so that is now the binding memory constraint. Rate: 24 tasks in a 1 688.4 s
+  parallel window = **70.4 s/task of 4-rank wall clock, 279.1 s of rank time per task** (mean 279.1 s,
+  median 163.2 s, max 1 109.2 s), extrapolating 240 tasks to **4.69 h** — inside the upstream
+  `12 h - 10 min` budget, with the heavy tail as the only threat (6.6 h at the second half's mean, 18.5 h at
+  the worst single task). Checkpointing's cost, from 8 tasks measured in both v3 and v4: **x1.176 (+17.6%)**,
+  constant per task. Completions per 400 s window 7/5/2/6 then 4 in the final 88 s: bursty, not degrading.
+  Quota `1.78h -> 2.87h` (+1.09 h) for 0.62 h of wall clock — this shape bills ~1.7-2x wall clock, so the run
+  cost more than the ~0.5 h it was authorized at, which is only visible after the fact. No submission spent;
+  `kaggle competitions submit` was never invoked.
 - 2026-09-24 — **The dependency blocker is RESOLVED, and a new memory blocker is exposed.** Built and
   published `ser8147/arc2-unsloth-wheelhouse` (public, 15 wheels, 191.6 MiB, `WHEELS.sha256`, generated
   licence table, dependency-closure check) with `scripts/kaggle/unsloth_wheelhouse.sh`; wired it into
